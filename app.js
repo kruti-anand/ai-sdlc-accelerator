@@ -1,4 +1,3 @@
-javascript
 /* =========================================================
    AI Requirements Engineering Copilot
    Version 1 — Deterministic prototype
