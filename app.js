@@ -343,12 +343,7 @@ function analyzeRequirement() {
   const typeDescription = getTypeDescription(state.requestType);
 
   $('#analysis-summary').textContent =
-    `${typeDescription} The copilot will ask targeted questions one at a time and use each answer to determine what to ask next.`;
-
-  $('#known-text').textContent = value;
-
-  $('#attention-text').textContent =
-    `Request type: ${state.requestType}. The conversation will focus on the most meaningful unanswered decisions.`;
+  `${typeDescription} The copilot will ask targeted questions one at a time and use each answer to determine what to ask next.`;
 
   $('#conversation-list').innerHTML = '';
 
