@@ -4,7 +4,8 @@ const state = {
   requirement: '',
   questions: [],
   answers: {},
-  requestType: ''
+  requestType: '',
+  currentQuestionIndex: 0
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -337,35 +338,53 @@ function analyzeRequirement() {
   state.requestType = classifyRequest(value);
   state.questions = getQuestionSet(state.requestType);
   state.answers = {};
+  state.currentQuestionIndex = 0;
 
   const typeDescription = getTypeDescription(state.requestType);
 
   $('#analysis-summary').textContent =
-    `${typeDescription} ${state.questions.length} clarification questions will help define the request before a reliable BRD can be drafted.`;
+    `${typeDescription} The copilot will ask targeted questions one at a time and use each answer to determine what to ask next.`;
 
   $('#known-text').textContent = value;
 
   $('#attention-text').textContent =
-    `Request type: ${state.requestType}. The questions below focus on information that is relevant to this type of request.`;
+    `Request type: ${state.requestType}. The conversation will focus on the most meaningful unanswered decisions.`;
 
-  $('#question-count').textContent =
-    `${state.questions.length} questions`;
+  $('#conversation-list').innerHTML = '';
 
-  $('#questions-list').innerHTML = state.questions.map((question, index) => `
-    <div class="question">
-      <label for="${question.id}">
-        <span class="question-index">${String(index + 1).padStart(2, '0')}</span>
-        ${question.label}
-      </label>
-      <input
-        id="${question.id}"
-        data-question="${question.id}"
-        placeholder="${question.placeholder}"
-      />
-    </div>
-  `).join('');
+  showNextQuestion();
 
   setStep(2);
+}
+
+function showNextQuestion() {
+  const index = state.currentQuestionIndex;
+
+  if (index >= state.questions.length) {
+    $('#question-progress').textContent = 'Complete';
+    $('#current-answer').style.display = 'none';
+    $('#next-question-btn').style.display = 'none';
+    $('#generate-btn').style.display = 'inline-flex';
+    return;
+  }
+
+  const question = state.questions[index];
+
+  $('#question-progress').textContent =
+    `Question ${index + 1}`;
+
+  $('#conversation-list').innerHTML += `
+    <div class="conversation-question">
+      <div class="question-label">
+        <span class="question-index">${String(index + 1).padStart(2, '0')}</span>
+        <span>${question.label}</span>
+      </div>
+    </div>
+  `;
+
+  $('#current-answer').value = '';
+  $('#current-answer').placeholder = question.placeholder;
+  $('#current-answer').focus();
 }
 
 function answer(id) {
@@ -795,6 +814,29 @@ $('#analyze-btn').addEventListener('click', analyzeRequirement);
 
 $('#back-btn').addEventListener('click', () => {
   setStep(1);
+});
+
+$('#next-question-btn').addEventListener('click', () => {
+  const question = state.questions[state.currentQuestionIndex];
+  const response = $('#current-answer').value.trim();
+
+  if (!response) {
+    showToast('Please provide an answer, or enter "Not decided".');
+    $('#current-answer').focus();
+    return;
+  }
+
+  state.answers[question.id] = response;
+
+  $('#conversation-list').innerHTML += `
+    <div class="conversation-answer">
+      ${escapeHtml(response)}
+    </div>
+  `;
+
+  state.currentQuestionIndex += 1;
+
+  showNextQuestion();
 });
 
 $('#generate-btn').addEventListener('click', generateBRD);
