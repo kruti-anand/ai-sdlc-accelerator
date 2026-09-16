@@ -340,8 +340,6 @@ function analyzeRequirement() {
   state.answers = {};
   state.currentQuestionIndex = 0;
 
-  const typeDescription = getTypeDescription(state.requestType);
-
   $('#conversation-list').innerHTML = '';
 
 showNextQuestion();
