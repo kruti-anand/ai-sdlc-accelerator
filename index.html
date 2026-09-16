@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI-assisted business requirements document workspace" />
+  <title>Clarity | BRD workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">✦</span><span>clarity</span></div>
+      <div class="workspace-label">WORKSPACE</div>
+      <nav aria-label="Workspace navigation">
+        <a class="nav-item active" href="#workspace"><span>▣</span> BRD workspace</a>
+        <a class="nav-item" href="#how-it-works"><span>⌁</span> How it works</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="ai-status"><span class="pulse"></span><div><strong>AI copilot ready</strong><small>Prototype mode</small></div></div>
+        <div class="version">v0.1 · BRD prototype</div>
+      </div>
+    </aside>
+
+    <main id="workspace" class="main-content">
+      <header class="topbar"><div><span class="eyebrow">REQUIREMENTS STUDIO</span><h1>Turn ambiguity into clarity.</h1><p class="subhead">Move from a business idea to a review-ready BRD with a human in the loop.</p></div><div class="topbar-badge">✦ AI-assisted</div></header>
+
+      <section class="progress-wrap" aria-label="Workflow progress">
+        <div class="progress-line"><div id="progress-fill"></div></div>
+        <div class="steps"><div class="step active" data-step="1"><span>01</span><b>Requirement</b></div><div class="step" data-step="2"><span>02</span><b>Clarify</b></div><div class="step" data-step="3"><span>03</span><b>Review BRD</b></div></div>
+      </section>
+
+      <section id="step-1" class="workflow-card step-panel active-panel">
+        <div class="card-heading"><div><span class="section-kicker">START HERE</span><h2>What are we solving?</h2><p>Share the requirement in plain language. The copilot will identify what is known, what is missing, and what needs a decision.</p></div><span class="number-badge">01</span></div>
+        <label for="requirement">Business requirement</label>
+        <textarea id="requirement" rows="5" placeholder="For example: We need to add MFA authentication for external users."></textarea>
+        <div class="input-footer"><button id="sample-btn" class="text-button" type="button">↗ Try an example</button><span id="char-count">0 / 1,000</span></div>
+        <button id="analyze-btn" class="primary-button" type="button">Analyze requirement <span>→</span></button>
+      </section>
+
+      <section id="step-2" class="workflow-card step-panel" hidden>
+        <div class="card-heading"><div><span class="section-kicker">AI ANALYSIS</span><h2>Let’s fill in the blanks.</h2><p id="analysis-summary"></p></div><span class="number-badge">02</span></div>
+        <div class="insight-grid"><div class="insight known"><span class="insight-icon">✓</span><div><small>KNOWN</small><p id="known-text"></p></div></div><div class="insight attention"><span class="insight-icon">!</span><div><small>NEEDS YOUR INPUT</small><p id="attention-text"></p></div></div></div>
+        <div class="questions-heading"><div><h3>Clarification questions</h3><p>Answer what you can. “Not decided” is a valid answer.</p></div><span id="question-count" class="muted-pill"></span></div>
+        <div id="questions-list" class="questions-list"></div>
+        <div class="action-row"><button id="back-btn" class="secondary-button" type="button">← Edit requirement</button><button id="generate-btn" class="primary-button" type="button">Generate BRD <span>→</span></button></div>
+      </section>
+
+      <section id="step-3" class="workflow-card step-panel" hidden>
+        <div class="brd-header"><div><span class="section-kicker">DRAFT FOR REVIEW</span><h2 id="brd-title">Business Requirements Document</h2><p id="brd-subtitle"></p></div><div class="review-status"><span class="status-dot"></span> Ready for review</div></div>
+        <div class="trace-banner"><span>✦</span><div><strong>Traceable draft</strong><p>Facts are based on your input. Highlighted assumptions should be confirmed before approval.</p></div></div>
+        <div id="brd-content" class="brd-content"></div>
+        <div class="action-row"><button id="restart-btn" class="secondary-button" type="button">↻ Start new requirement</button><button id="copy-btn" class="primary-button" type="button">Copy BRD <span>↗</span></button></div>
+      </section>
+
+      <section id="how-it-works" class="principles"><div><span class="section-kicker">DESIGNED FOR TRUST</span><h2>AI proposes. You decide.</h2></div><div class="principle-list"><div><span>01</span><p><strong>Expose gaps</strong><br />No silent assumptions.</p></div><div><span>02</span><p><strong>Keep a trail</strong><br />Input → answers → BRD.</p></div><div><span>03</span><p><strong>Review first</strong><br />Nothing moves downstream automatically.</p></div></div></section>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
