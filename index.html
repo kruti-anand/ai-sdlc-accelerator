@@ -44,8 +44,26 @@
       <section id="step-2" class="workflow-card step-panel" hidden>
         <div class="card-heading"><div><span class="section-kicker">AI ANALYSIS</span><h2>Let’s fill in the blanks.</h2><p id="analysis-summary"></p></div><span class="number-badge">02</span></div>
         <div class="insight-grid"><div class="insight known"><span class="insight-icon">✓</span><div><small>KNOWN</small><p id="known-text"></p></div></div><div class="insight attention"><span class="insight-icon">!</span><div><small>NEEDS YOUR INPUT</small><p id="attention-text"></p></div></div></div>
-        <div class="questions-heading"><div><h3>Clarification questions</h3><p>Answer what you can. “Not decided” is a valid answer.</p></div><span id="question-count" class="muted-pill"></span></div>
-        <div id="questions-list" class="questions-list"></div>
+        <div class="questions-heading">
+          <div>
+            <h3>Clarifying question</h3>
+            <p>The copilot will ask one question at a time and build on your answers.</p>
+          </div>
+          <span id="question-progress" class="muted-pill"></span>
+        </div>
+
+        <div id="conversation-list" class="conversation-list"></div>
+
+        <div class="question-input-area">
+          <input
+          id="current-answer"
+          type="text"
+          placeholder="Type your answer..."
+       />
+      <button id="next-question-btn" class="primary-button" type="button">
+        Continue <span>→</span>
+      </button>
+  </div>
         <div class="action-row"><button id="back-btn" class="secondary-button" type="button">← Edit requirement</button><button id="generate-btn" class="primary-button" type="button">Generate BRD <span>→</span></button></div>
       </section>
 
