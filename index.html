@@ -1,83 +1,569 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="AI-assisted business requirements document workspace" />
-  <title>Clarity | BRD workspace</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="description"
+    content="AI Requirements Engineering Copilot — transform ambiguous requests into validated, traceable business requirements."
+  >
+  <title>AI Requirements Engineering Copilot</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
   <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">✦</span><span>clarity</span></div>
-      <div class="workspace-label">WORKSPACE</div>
-      <nav aria-label="Workspace navigation">
-        <a class="nav-item active" href="#workspace"><span>▣</span> BRD workspace</a>
-        <a class="nav-item" href="#how-it-works"><span>⌁</span> How it works</a>
-      </nav>
-      <div class="sidebar-bottom">
-        <div class="ai-status"><span class="pulse"></span><div><strong>AI copilot ready</strong><small>Prototype mode</small></div></div>
-        <div class="version">v0.1 · BRD prototype</div>
+
+```
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <div>
+      <div class="brand-name">clarity</div>
+      <div class="brand-subtitle">AI Requirements Copilot</div>
+    </div>
+  </div>
+
+  <div class="sidebar-intro">
+    <span class="eyebrow">AI-ASSISTED REQUIREMENTS ENGINEERING</span>
+    <h1>From ambiguity to validated requirements.</h1>
+    <p>
+      A conversational requirements workflow that asks what matters,
+      captures what is known, and keeps humans in control of validation.
+    </p>
+  </div>
+
+  <div class="sidebar-principle">
+    <div class="principle-label">CORE PRINCIPLE</div>
+    <div class="principle-title">AI proposes. You validate.</div>
+    <div class="principle-copy">
+      The AI can identify gaps and draft requirements, but business
+      decisions remain with the human.
+    </div>
+  </div>
+
+  <div class="sidebar-boundary">
+    <div class="boundary-label">REQUIREMENTS BOUNDARY</div>
+    <div class="boundary-row">
+      <span>BRD</span>
+      <span>WHAT + WHY</span>
+    </div>
+    <div class="boundary-divider"></div>
+    <div class="boundary-row muted">
+      <span>SDD</span>
+      <span>HOW</span>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Application -->
+<main class="main-content">
+
+  <!-- Top Header -->
+  <header class="topbar">
+    <div>
+      <span class="topbar-eyebrow">REQUIREMENTS ENGINEERING COPILOT</span>
+      <h2 id="page-title">Turn ambiguity into clarity.</h2>
+    </div>
+
+    <div class="topbar-status">
+      <span class="status-dot"></span>
+      <span id="workflow-status">Ready</span>
+    </div>
+  </header>
+
+  <!-- Progress -->
+  <nav class="progress-nav" aria-label="Workflow progress">
+    <div class="progress-step active" data-step="1">
+      <div class="progress-number">01</div>
+      <div>
+        <div class="progress-label">Requirement</div>
+        <div class="progress-description">Start with the request</div>
       </div>
-    </aside>
+    </div>
 
-    <main id="workspace" class="main-content">
-      <header class="topbar"><div><span class="eyebrow">REQUIREMENTS STUDIO</span><h1>Turn ambiguity into clarity.</h1><p class="subhead">Move from a business idea to a review-ready BRD with a human in the loop.</p></div><div class="topbar-badge">✦ AI-assisted</div></header>
+    <div class="progress-line"></div>
 
-      <section class="progress-wrap" aria-label="Workflow progress">
-        <div class="progress-line"><div id="progress-fill"></div></div>
-        <div class="steps"><div class="step active" data-step="1"><span>01</span><b>Requirement</b></div><div class="step" data-step="2"><span>02</span><b>Clarify</b></div><div class="step" data-step="3"><span>03</span><b>Review BRD</b></div></div>
-      </section>
+    <div class="progress-step" data-step="2">
+      <div class="progress-number">02</div>
+      <div>
+        <div class="progress-label">Clarify</div>
+        <div class="progress-description">Resolve what matters</div>
+      </div>
+    </div>
 
-      <section id="step-1" class="workflow-card step-panel active-panel">
-        <div class="card-heading"><div><span class="section-kicker">START HERE</span><h2>What are we solving?</h2><p>Share the requirement in plain language. The copilot will identify what is known, what is missing, and what needs a decision.</p></div><span class="number-badge">01</span></div>
-        <label for="requirement">Business requirement</label>
-        <textarea id="requirement" rows="5" placeholder="For example: We need to add MFA authentication for external users."></textarea>
-        <div class="input-footer"><button id="sample-btn" class="text-button" type="button">↗ Try an example</button><span id="char-count">0 / 1,000</span></div>
-        <button id="analyze-btn" class="primary-button" type="button">Analyze requirement <span>→</span></button>
-      </section>
+    <div class="progress-line"></div>
 
-      <section id="step-2" class="workflow-card step-panel" hidden>
-        <div class="card-heading"><div><span class="section-kicker">AI ANALYSIS</span><h2>Let’s fill in the blanks.</h2><p id="analysis-summary"></p></div><span class="number-badge">02</span></div>
-        <div class="insight-grid"><div class="insight known"><span class="insight-icon">✓</span><div><small>KNOWN</small><p id="known-text"></p></div></div><div class="insight attention"><span class="insight-icon">!</span><div><small>NEEDS YOUR INPUT</small><p id="attention-text"></p></div></div></div>
-        <div class="questions-heading">
-          <div>
-            <h3>Clarifying question</h3>
-            <p>The copilot will ask one question at a time and build on your answers.</p>
-          </div>
-          <span id="question-progress" class="muted-pill"></span>
+    <div class="progress-step" data-step="3">
+      <div class="progress-number">03</div>
+      <div>
+        <div class="progress-label">Validate</div>
+        <div class="progress-description">You approve the requirement</div>
+      </div>
+    </div>
+
+    <div class="progress-line"></div>
+
+    <div class="progress-step" data-step="4">
+      <div class="progress-number">04</div>
+      <div>
+        <div class="progress-label">BRD</div>
+        <div class="progress-description">Generate the document</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- =========================================================
+       STEP 1 — REQUIREMENT
+       ========================================================= -->
+  <section id="step-1" class="workflow-step active">
+
+    <div class="section-heading">
+      <span class="section-kicker">STEP 01</span>
+      <h3>What are you trying to accomplish?</h3>
+      <p>
+        Start with the request in your own words. It does not need to
+        be perfectly structured.
+      </p>
+    </div>
+
+    <div class="workflow-card requirement-card">
+
+      <div class="card-label-row">
+        <span class="card-label">YOUR REQUEST</span>
+        <span class="card-hint">Natural language is fine</span>
+      </div>
+
+      <label for="requirement" class="sr-only">
+        Describe your business requirement
+      </label>
+
+      <textarea
+        id="requirement"
+        class="requirement-input"
+        rows="7"
+        placeholder="Example: We need to add MFA authentication for external users."
+      ></textarea>
+
+      <div class="input-footer">
+        <button id="sample-btn" class="text-button" type="button">
+          Use example
+        </button>
+
+        <span id="character-count" class="character-count">
+          0 characters
+        </span>
+      </div>
+
+      <div class="card-actions">
+        <button id="analyze-btn" class="primary-button" type="button">
+          Analyze requirement
+          <span class="button-arrow">→</span>
+        </button>
+      </div>
+
+    </div>
+
+    <div class="design-note">
+      <div class="design-note-icon">i</div>
+      <div>
+        <strong>No questionnaire.</strong>
+        The copilot will identify what is already known and ask one
+        contextual question at a time.
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- =========================================================
+       STEP 2 — CLARIFY
+       ========================================================= -->
+  <section id="step-2" class="workflow-step">
+
+    <div class="section-heading">
+      <span class="section-kicker">STEP 02</span>
+      <h3>Let's clarify what matters.</h3>
+      <p>
+        The copilot continuously reassesses the requirement instead of
+        following a fixed question sequence.
+      </p>
+    </div>
+
+    <!-- Requirement understanding -->
+    <div class="understanding-grid">
+
+      <div class="workflow-card understanding-card">
+        <div class="card-label-row">
+          <span class="card-label">WHAT I UNDERSTAND</span>
+          <span id="request-type-badge" class="type-badge">Analyzing</span>
         </div>
 
-        <div id="conversation-list" class="conversation-list"></div>
+        <div id="understanding-content" class="understanding-content">
+          <p class="empty-state">
+            Your requirement understanding will appear here.
+          </p>
+        </div>
+      </div>
 
-        <div class="question-input-area">
-          <input
+      <div class="workflow-card state-card">
+        <div class="card-label-row">
+          <span class="card-label">REQUIREMENT STATE</span>
+          <span id="interview-state-badge" class="state-badge">
+            INTERVIEWING
+          </span>
+        </div>
+
+        <div class="state-summary">
+          <div class="state-metric">
+            <span id="facts-count" class="state-metric-number">0</span>
+            <span class="state-metric-label">Known</span>
+          </div>
+
+          <div class="state-metric">
+            <span id="requirements-count" class="state-metric-number">0</span>
+            <span class="state-metric-label">Requirements</span>
+          </div>
+
+          <div class="state-metric">
+            <span id="scope-count" class="state-metric-number">0</span>
+            <span class="state-metric-label">Scope items</span>
+          </div>
+
+          <div class="state-metric">
+            <span id="tbd-count" class="state-metric-number">0</span>
+            <span class="state-metric-label">TBD / Open</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- Conversation -->
+    <div class="workflow-card interview-card">
+
+      <div class="card-label-row">
+        <div>
+          <span class="card-label">REQUIREMENTS INTERVIEW</span>
+          <p class="card-subtitle">
+            One meaningful question at a time
+          </p>
+        </div>
+
+        <span id="question-number" class="question-number">
+          Question 1
+        </span>
+      </div>
+
+      <div id="conversation" class="conversation" aria-live="polite">
+        <!-- Conversation turns are rendered by app.js -->
+      </div>
+
+      <div id="current-question" class="current-question">
+        <div class="question-kicker">NEXT QUESTION</div>
+
+        <div id="question-text" class="question-text">
+          Your next clarification question will appear here.
+        </div>
+
+        <div id="question-why" class="question-why hidden">
+          <span class="why-label">WHY I'M ASKING</span>
+          <span id="question-why-text"></span>
+        </div>
+
+        <label for="current-answer" class="sr-only">
+          Your answer
+        </label>
+
+        <textarea
           id="current-answer"
-          type="text"
-          placeholder="Type your answer..."
-       />
-      <button id="next-question-btn" class="primary-button" type="button">
-        Continue <span>→</span>
+          class="answer-input"
+          rows="4"
+          placeholder="Type your answer here..."
+        ></textarea>
+
+        <div class="question-actions">
+          <button id="continue-btn" class="primary-button" type="button">
+            Continue
+            <span class="button-arrow">→</span>
+          </button>
+
+          <button id="skip-btn" class="secondary-button" type="button">
+            Mark as TBD
+          </button>
+        </div>
+      </div>
+
+      <div id="ready-message" class="ready-message hidden">
+        <div class="ready-icon">✓</div>
+        <div>
+          <strong>The requirement is ready for review.</strong>
+          <p>
+            The copilot has enough information to present a validation
+            summary. You can still make changes before approving it.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- Interview history -->
+    <details class="history-panel">
+      <summary>
+        <span>View interview history</span>
+        <span id="history-count">0 questions</span>
+      </summary>
+
+      <div id="history-content" class="history-content">
+        <p class="empty-state">
+          Interview history will appear here as the conversation develops.
+        </p>
+      </div>
+    </details>
+
+
+    <div class="step-actions">
+      <button id="back-to-requirement" class="secondary-button" type="button">
+        ← Edit request
       </button>
-  </div>
-        <div class="action-row"><button id="back-btn" class="secondary-button" type="button">← Edit requirement</button><button id="generate-btn" class="primary-button" type="button">Generate BRD <span>→</span></button></div>
-      </section>
 
-      <section id="step-3" class="workflow-card step-panel" hidden>
-        <div class="brd-header"><div><span class="section-kicker">DRAFT FOR REVIEW</span><h2 id="brd-title">Business Requirements Document</h2><p id="brd-subtitle"></p></div><div class="review-status"><span class="status-dot"></span> Ready for review</div></div>
-        <div class="trace-banner"><span>✦</span><div><strong>Traceable draft</strong><p>Facts are based on your input. Highlighted assumptions should be confirmed before approval.</p></div></div>
-        <div id="brd-content" class="brd-content"></div>
-        <div class="action-row"><button id="restart-btn" class="secondary-button" type="button">↻ Start new requirement</button><button id="copy-btn" class="primary-button" type="button">Copy BRD <span>↗</span></button></div>
-      </section>
+      <button id="continue-to-validation" class="primary-button hidden" type="button">
+        Review requirement
+        <span class="button-arrow">→</span>
+      </button>
+    </div>
 
-      <section id="how-it-works" class="principles"><div><span class="section-kicker">DESIGNED FOR TRUST</span><h2>AI proposes. You decide.</h2></div><div class="principle-list"><div><span>01</span><p><strong>Expose gaps</strong><br />No silent assumptions.</p></div><div><span>02</span><p><strong>Keep a trail</strong><br />Input → answers → BRD.</p></div><div><span>03</span><p><strong>Review first</strong><br />Nothing moves downstream automatically.</p></div></div></section>
-    </main>
+  </section>
+
+
+  <!-- =========================================================
+       STEP 3 — VALIDATE
+       ========================================================= -->
+  <section id="step-3" class="workflow-step">
+
+    <div class="section-heading">
+      <span class="section-kicker">STEP 03</span>
+      <h3>Validate the requirement.</h3>
+      <p>
+        Review what the copilot understood. The AI proposes; you decide
+        whether the requirement is ready to become a BRD.
+      </p>
+    </div>
+
+    <div class="validation-banner">
+      <div class="validation-banner-icon">✓</div>
+      <div>
+        <strong>Human validation required</strong>
+        <p>
+          The copilot can determine that the requirement is ready for
+          review, but it cannot approve its own work.
+        </p>
+      </div>
+    </div>
+
+
+    <!-- Objective -->
+    <div class="workflow-card validation-card">
+      <div class="card-label-row">
+        <span class="card-label">OBJECTIVE</span>
+      </div>
+
+      <div id="validation-objective" class="validation-content">
+        <p class="empty-state">No objective captured yet.</p>
+      </div>
+    </div>
+
+
+    <!-- Confirmed requirements -->
+    <div class="workflow-card validation-card">
+      <div class="card-label-row">
+        <span class="card-label">CONFIRMED REQUIREMENTS</span>
+        <span id="validation-requirement-count" class="count-badge">0</span>
+      </div>
+
+      <div id="validation-requirements" class="validation-list">
+        <p class="empty-state">No confirmed requirements yet.</p>
+      </div>
+    </div>
+
+
+    <!-- Scope / dependencies / risks -->
+    <div class="validation-grid">
+
+      <div class="workflow-card validation-card">
+        <div class="card-label-row">
+          <span class="card-label">SCOPE</span>
+        </div>
+
+        <div class="validation-section">
+          <div class="mini-label">IN SCOPE</div>
+          <div id="validation-in-scope" class="validation-list compact">
+            <p class="empty-state">None identified.</p>
+          </div>
+        </div>
+
+        <div class="validation-section">
+          <div class="mini-label">OUT OF SCOPE</div>
+          <div id="validation-out-scope" class="validation-list compact">
+            <p class="empty-state">None identified.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="workflow-card validation-card">
+        <div class="card-label-row">
+          <span class="card-label">DEPENDENCIES & RISKS</span>
+        </div>
+
+        <div class="validation-section">
+          <div class="mini-label">DEPENDENCIES</div>
+          <div id="validation-dependencies" class="validation-list compact">
+            <p class="empty-state">None identified.</p>
+          </div>
+        </div>
+
+        <div class="validation-section">
+          <div class="mini-label">RISKS</div>
+          <div id="validation-risks" class="validation-list compact">
+            <p class="empty-state">None identified.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- Assumptions / TBD -->
+    <div class="workflow-card validation-card">
+      <div class="card-label-row">
+        <span class="card-label">ASSUMPTIONS & OPEN DECISIONS</span>
+      </div>
+
+      <div id="validation-assumptions" class="validation-list">
+        <p class="empty-state">None identified.</p>
+      </div>
+    </div>
+
+
+    <!-- Success criteria -->
+    <div class="workflow-card validation-card">
+      <div class="card-label-row">
+        <span class="card-label">SUCCESS CRITERIA</span>
+      </div>
+
+      <div id="validation-success-criteria" class="validation-list">
+        <p class="empty-state">None identified.</p>
+      </div>
+    </div>
+
+
+    <!-- Validation status -->
+    <div class="validation-status-card">
+
+      <div>
+        <div class="mini-label">VALIDATION STATUS</div>
+        <div id="validation-status" class="validation-status">
+          PENDING REVIEW
+        </div>
+      </div>
+
+      <div class="validation-actions">
+        <button id="continue-interview-btn" class="secondary-button" type="button">
+          Continue interview
+        </button>
+
+        <button id="approve-btn" class="primary-button" type="button">
+          Approve & Generate BRD
+          <span class="button-arrow">→</span>
+        </button>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =========================================================
+       STEP 4 — BRD
+       ========================================================= -->
+  <section id="step-4" class="workflow-step">
+
+    <div class="section-heading">
+      <span class="section-kicker">STEP 04</span>
+      <h3>Validated Business Requirements.</h3>
+      <p>
+        This BRD was generated from the requirement you reviewed and
+        explicitly approved.
+      </p>
+    </div>
+
+    <div class="brd-status-banner">
+      <div class="brd-status-icon">✓</div>
+
+      <div>
+        <div class="brd-status-label">VALIDATED REQUIREMENT</div>
+        <div class="brd-status-copy">
+          Human approval recorded before BRD generation.
+        </div>
+      </div>
+
+      <div class="brd-status-meta">
+        <span class="status-dot"></span>
+        <span>Validated</span>
+      </div>
+    </div>
+
+
+    <div class="workflow-card brd-card">
+
+      <div class="brd-header">
+        <div>
+          <div class="card-label">BUSINESS REQUIREMENTS DOCUMENT</div>
+          <h4 id="brd-title">Validated Business Requirements</h4>
+        </div>
+
+        <div class="brd-actions">
+          <button id="copy-brd-btn" class="secondary-button" type="button">
+            Copy BRD
+          </button>
+        </div>
+      </div>
+
+      <div class="traceability-banner">
+        <div class="traceability-icon">↗</div>
+        <div>
+          <strong>Traceable to validated requirements</strong>
+          <span>
+            This document was generated from the approved Requirement State.
+          </span>
+        </div>
+      </div>
+
+      <article id="brd-content" class="brd-content">
+        <!-- Generated BRD is rendered by app.js -->
+      </article>
+
+    </div>
+
+
+    <div class="brd-footer-actions">
+      <button id="restart-btn" class="secondary-button" type="button">
+        Start new requirement
+      </button>
+    </div>
+
+  </section>
+
+</main>
+```
+
   </div>
-  <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=2"></script>
+
+  <script src="app.js?v=3"></script>
+
 </body>
 </html>
