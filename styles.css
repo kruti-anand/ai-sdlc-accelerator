@@ -7,22 +7,29 @@
 --text-muted: #8993a5;
 --border: #e4e8ef;
 --border-strong: #d5dbe5;
+
 --accent: #4f46e5;
 --accent-dark: #3730a3;
 --accent-soft: #eef0ff;
+
 --success: #16845b;
 --success-soft: #eaf8f2;
+
 --warning: #a16207;
 --warning-soft: #fff8e7;
+
 --danger: #b42318;
 --danger-soft: #fff0ee;
+
 --shadow-sm: 0 2px 8px rgba(23, 32, 51, 0.05);
 --shadow-md: 0 10px 30px rgba(23, 32, 51, 0.08);
 --shadow-lg: 0 20px 55px rgba(23, 32, 51, 0.10);
+
 --radius-sm: 8px;
 --radius-md: 14px;
 --radius-lg: 20px;
 --radius-xl: 26px;
+
 --max-width: 1240px;
 }
 
@@ -188,6 +195,319 @@ display: inline-block;
 }
 
 /* =========================================================
+ACCELERATOR HERO
+========================================================= */
+
+.accelerator-hero {
+position: relative;
+overflow: hidden;
+padding: 86px 0 78px;
+background:
+radial-gradient(
+circle at 82% 18%,
+rgba(79, 70, 229, 0.08),
+transparent 32%
+),
+linear-gradient(
+180deg,
+#ffffff 0%,
+#f8f9fd 100%
+);
+border-bottom: 1px solid var(--border);
+}
+
+.accelerator-hero::before {
+content: "";
+position: absolute;
+width: 420px;
+height: 420px;
+right: -180px;
+top: -190px;
+border: 1px solid rgba(79, 70, 229, 0.08);
+border-radius: 50%;
+}
+
+.accelerator-hero .hero-layout {
+width: min(var(--max-width), calc(100% - 48px));
+margin: 0 auto;
+display: grid;
+grid-template-columns: minmax(0, 0.9fr) minmax(460px, 1.1fr);
+gap: 70px;
+align-items: center;
+min-height: 560px;
+}
+
+.accelerator-hero .hero-copy {
+padding: 0;
+}
+
+.accelerator-hero h1 {
+max-width: 690px;
+margin-top: 18px;
+margin-bottom: 24px;
+font-size: clamp(44px, 5.2vw, 68px);
+line-height: 1.01;
+letter-spacing: -0.055em;
+font-weight: 780;
+}
+
+.accelerator-hero h1 span {
+color: var(--accent);
+}
+
+.accelerator-hero .hero-description {
+max-width: 610px;
+margin-bottom: 30px;
+color: var(--text-secondary);
+font-size: 17px;
+line-height: 1.7;
+}
+
+.hero-actions {
+display: flex;
+align-items: center;
+gap: 12px;
+}
+
+.accelerator-hero .primary-button {
+min-height: 50px;
+padding: 0 20px;
+}
+
+/* =========================================================
+WORKFLOW OVERVIEW
+========================================================= */
+
+.accelerator-overview {
+position: relative;
+padding: 25px;
+border: 1px solid var(--border);
+border-radius: 24px;
+background: rgba(255, 255, 255, 0.86);
+box-shadow: var(--shadow-lg);
+backdrop-filter: blur(8px);
+}
+
+.overview-label {
+margin-bottom: 17px;
+color: var(--text-muted);
+font-size: 10px;
+font-weight: 850;
+letter-spacing: 0.12em;
+}
+
+.workflow-stack {
+display: flex;
+flex-direction: column;
+}
+
+.workflow-item {
+display: flex;
+align-items: center;
+gap: 14px;
+min-height: 57px;
+padding: 8px 12px;
+border: 1px solid transparent;
+border-radius: 12px;
+transition:
+background 160ms ease,
+border-color 160ms ease,
+transform 160ms ease;
+}
+
+.workflow-item:hover {
+background: var(--accent-soft);
+border-color: #dfe2ff;
+transform: translateX(3px);
+}
+
+.workflow-number {
+width: 30px;
+height: 30px;
+flex: 0 0 30px;
+display: grid;
+place-items: center;
+border-radius: 9px;
+background: var(--accent-soft);
+color: var(--accent);
+font-size: 9px;
+font-weight: 850;
+}
+
+.workflow-item strong {
+display: block;
+color: var(--text);
+font-size: 12px;
+font-weight: 800;
+}
+
+.workflow-item span:not(.workflow-number) {
+display: block;
+margin-top: 1px;
+color: var(--text-muted);
+font-size: 10px;
+}
+
+.workflow-connector {
+width: 1px;
+height: 13px;
+margin-left: 26px;
+background: var(--border-strong);
+}
+
+/* =========================================================
+PRINCIPLES
+========================================================= */
+
+.principles-section,
+.impact-section,
+.workflow-entry-section {
+width: min(var(--max-width), calc(100% - 48px));
+margin: 0 auto;
+}
+
+.principles-section {
+padding: 86px 0 72px;
+}
+
+.principles-section .section-heading {
+max-width: 780px;
+margin-bottom: 34px;
+}
+
+.principles-section h2 {
+margin-top: 16px;
+font-size: clamp(32px, 4vw, 48px);
+line-height: 1.06;
+}
+
+.principles-section .section-heading p {
+max-width: 690px;
+margin-top: 16px;
+font-size: 15px;
+line-height: 1.7;
+}
+
+.principles-grid {
+display: grid;
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 16px;
+}
+
+.principles-grid .principle-card {
+max-width: none;
+min-height: 190px;
+padding: 23px;
+background: var(--surface);
+box-shadow: var(--shadow-sm);
+}
+
+.principles-grid .principle-icon {
+width: 38px;
+height: 38px;
+flex-basis: 38px;
+font-size: 11px;
+font-weight: 850;
+}
+
+/* =========================================================
+IMPACT
+========================================================= */
+
+.impact-section {
+padding: 76px 0 78px;
+border-top: 1px solid var(--border);
+}
+
+.impact-section .section-heading {
+max-width: 800px;
+margin-bottom: 30px;
+}
+
+.impact-section h2 {
+margin-top: 16px;
+}
+
+.impact-section .section-heading p {
+margin-top: 12px;
+}
+
+.impact-grid {
+display: grid;
+grid-template-columns: repeat(4, minmax(0, 1fr));
+gap: 14px;
+}
+
+.impact-card {
+min-height: 145px;
+padding: 23px;
+border: 1px solid var(--border);
+border-radius: var(--radius-lg);
+background: var(--surface);
+box-shadow: var(--shadow-sm);
+}
+
+.impact-card strong {
+display: block;
+color: var(--accent);
+font-size: 29px;
+line-height: 1.1;
+letter-spacing: -0.04em;
+}
+
+.impact-card span {
+display: block;
+margin-top: 12px;
+color: var(--text-secondary);
+font-size: 11px;
+line-height: 1.5;
+}
+
+.impact-note {
+margin: 14px 0 0;
+color: var(--text-muted);
+font-size: 10px;
+}
+
+/* =========================================================
+WORKFLOW ENTRY
+========================================================= */
+
+.workflow-entry-section {
+padding: 72px 0 10px;
+border-top: 1px solid var(--border);
+}
+
+.workflow-entry-section .section-heading {
+align-items: flex-end;
+margin-bottom: 10px;
+}
+
+.workflow-entry-section h2 {
+margin-top: 16px;
+}
+
+.workflow-entry-section .section-heading p {
+max-width: 730px;
+margin-top: 12px;
+line-height: 1.65;
+}
+
+.workflow-entry-badge {
+display: inline-flex;
+align-items: center;
+gap: 7px;
+padding: 7px 11px;
+border: 1px solid var(--border);
+border-radius: 999px;
+background: var(--surface);
+color: var(--text-secondary);
+font-size: 10px;
+font-weight: 750;
+white-space: nowrap;
+}
+
+/* =========================================================
 PROGRESS NAVIGATION
 ========================================================= */
 
@@ -319,7 +639,7 @@ letter-spacing: -0.02em;
 STEP 1 — HERO
 ========================================================= */
 
-.hero-layout {
+.main-content > .step-panel:first-of-type .hero-layout {
 display: grid;
 grid-template-columns: minmax(0, 0.86fr) minmax(480px, 1.14fr);
 gap: 70px;
@@ -327,11 +647,11 @@ align-items: center;
 min-height: 570px;
 }
 
-.hero-copy {
+.main-content > .step-panel:first-of-type .hero-copy {
 padding: 12px 0;
 }
 
-.hero-description {
+.main-content > .step-panel:first-of-type .hero-description {
 max-width: 570px;
 margin-bottom: 30px;
 color: var(--text-secondary);
@@ -339,7 +659,7 @@ font-size: 17px;
 line-height: 1.65;
 }
 
-.principle-card {
+.main-content > .step-panel:first-of-type .principle-card {
 max-width: 540px;
 display: flex;
 gap: 13px;
@@ -349,7 +669,7 @@ border-radius: var(--radius-md);
 background: rgba(255, 255, 255, 0.72);
 }
 
-.principle-icon {
+.main-content > .step-panel:first-of-type .principle-icon {
 width: 30px;
 height: 30px;
 flex: 0 0 30px;
@@ -361,13 +681,13 @@ background: var(--accent-soft);
 font-size: 15px;
 }
 
-.principle-card strong {
+.main-content > .step-panel:first-of-type .principle-card strong {
 display: block;
 font-size: 13px;
 margin-bottom: 3px;
 }
 
-.principle-card p {
+.main-content > .step-panel:first-of-type .principle-card p {
 margin: 0;
 color: var(--text-secondary);
 font-size: 12px;
@@ -657,7 +977,11 @@ margin: 16px 22px 0;
 padding: 23px;
 border: 1px solid #dfe2ff;
 border-radius: 15px;
-background: linear-gradient(135deg, #f7f7ff 0%, #fbfbff 100%);
+background: linear-gradient(
+135deg,
+#f7f7ff 0%,
+#fbfbff 100%
+);
 }
 
 .question-number {
@@ -1213,19 +1537,27 @@ transform: translateX(4px);
 }
 
 /* =========================================================
-RESPONSIVE
+RESPONSIVE — ACCELERATOR
 ========================================================= */
 
 @media (max-width: 1050px) {
 
-.hero-layout {
+.accelerator-hero .hero-layout {
 grid-template-columns: 1fr;
-gap: 34px;
+gap: 42px;
 min-height: auto;
 }
 
-.hero-copy {
+.accelerator-hero .hero-copy {
 max-width: 760px;
+}
+
+.principles-grid {
+grid-template-columns: 1fr;
+}
+
+.impact-grid {
+grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .workspace-layout {
@@ -1245,7 +1577,21 @@ column-gap: 22px;
 .state-section {
 border-bottom: 1px solid var(--border);
 }
+
+.main-content > .step-panel:first-of-type .hero-layout {
+grid-template-columns: 1fr;
+gap: 34px;
+min-height: auto;
 }
+
+.main-content > .step-panel:first-of-type .hero-copy {
+max-width: 760px;
+}
+}
+
+/* =========================================================
+RESPONSIVE — TABLET / MOBILE
+========================================================= */
 
 @media (max-width: 760px) {
 
@@ -1257,6 +1603,64 @@ padding: 14px 18px;
 
 .brand-tagline {
 display: none;
+}
+
+.header-status {
+font-size: 11px;
+}
+
+.accelerator-hero {
+padding: 58px 0 54px;
+}
+
+.accelerator-hero .hero-layout {
+width: calc(100% - 30px);
+}
+
+.accelerator-hero h1 {
+font-size: 42px;
+}
+
+.accelerator-hero .hero-description {
+font-size: 15px;
+}
+
+.accelerator-overview {
+padding: 18px;
+}
+
+.workflow-item {
+padding: 7px 5px;
+}
+
+.principles-section,
+.impact-section,
+.workflow-entry-section {
+width: calc(100% - 30px);
+}
+
+.principles-section {
+padding: 58px 0 50px;
+}
+
+.impact-section {
+padding: 52px 0 55px;
+}
+
+.workflow-entry-section {
+padding: 52px 0 5px;
+}
+
+.impact-grid {
+grid-template-columns: 1fr;
+}
+
+.workflow-entry-section .section-heading {
+align-items: flex-start;
+}
+
+.workflow-entry-badge {
+margin-top: 8px;
 }
 
 .progress-nav {
@@ -1347,5 +1751,24 @@ flex-direction: column;
 
 .app-footer > div:last-child {
 display: none;
+}
+}
+
+/* =========================================================
+ACCESSIBILITY / REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+html {
+scroll-behavior: auto;
+}
+
+*,
+*::before,
+*::after {
+animation-duration: 0.01ms !important;
+animation-iteration-count: 1 !important;
+transition-duration: 0.01ms !important;
 }
 }
