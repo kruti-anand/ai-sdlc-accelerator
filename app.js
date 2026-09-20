@@ -1,3 +1,4 @@
+javascript
 /* =========================================================
    AI Requirements Engineering Copilot
    Version 1 — Deterministic prototype
@@ -108,12 +109,18 @@ function setLoading(isLoading, message = "Working…") {
 
   if (analyzeButton) {
     analyzeButton.disabled = isLoading;
-    analyzeButton.setAttribute("aria-busy", String(isLoading));
+    analyzeButton.setAttribute(
+      "aria-busy",
+      String(isLoading)
+    );
   }
 
   if (continueButton) {
     continueButton.disabled = isLoading;
-    continueButton.setAttribute("aria-busy", String(isLoading));
+    continueButton.setAttribute(
+      "aria-busy",
+      String(isLoading)
+    );
   }
 
   if (tbdButton) {
@@ -124,7 +131,9 @@ function setLoading(isLoading, message = "Working…") {
 
   if (loadingRegion) {
     loadingRegion.hidden = !isLoading;
-    loadingRegion.textContent = isLoading ? message : "";
+    loadingRegion.textContent = isLoading
+      ? message
+      : "";
   }
 }
 
@@ -171,14 +180,22 @@ function goToStep(step) {
 
   $$(".step-panel").forEach((panel) => {
     const panelStep = Number(panel.dataset.step);
+
     panel.hidden = panelStep !== step;
   });
 
   $$(".progress-step").forEach((item) => {
     const itemStep = Number(item.dataset.step);
 
-    item.classList.toggle("active", itemStep === step);
-    item.classList.toggle("complete", itemStep < step);
+    item.classList.toggle(
+      "active",
+      itemStep === step
+    );
+
+    item.classList.toggle(
+      "complete",
+      itemStep < step
+    );
 
     item.setAttribute(
       "aria-current",
@@ -254,11 +271,16 @@ function getRequestTypeLabel(category) {
    State Helpers
    ========================================================= */
 
-function addKnownFact(statement, source = "user_provided") {
+function addKnownFact(
+  statement,
+  source = "user_provided"
+) {
   if (!statement) return;
 
   const exists = requirementState.knownFacts.some(
-    (item) => normalize(item.statement) === normalize(statement)
+    (item) =>
+      normalize(item.statement) ===
+      normalize(statement)
   );
 
   if (!exists) {
@@ -269,11 +291,16 @@ function addKnownFact(statement, source = "user_provided") {
   }
 }
 
-function addRequirement(statement, source = "user_confirmed") {
+function addRequirement(
+  statement,
+  source = "user_confirmed"
+) {
   if (!statement) return;
 
   const exists = requirementState.requirements.some(
-    (item) => normalize(item.statement) === normalize(statement)
+    (item) =>
+      normalize(item.statement) ===
+      normalize(statement)
   );
 
   if (!exists) {
@@ -285,7 +312,10 @@ function addRequirement(statement, source = "user_confirmed") {
       id,
       statement,
       source,
-      confidence: source === "user_confirmed" ? "confirmed" : "inferred"
+      confidence:
+        source === "user_confirmed"
+          ? "confirmed"
+          : "inferred"
     });
   }
 }
@@ -294,7 +324,8 @@ function addToList(collection, statement) {
   if (!statement) return;
 
   const exists = collection.some(
-    (item) => normalize(item) === normalize(statement)
+    (item) =>
+      normalize(item) === normalize(statement)
   );
 
   if (!exists) {
@@ -307,7 +338,8 @@ function addToList(collection, statement) {
    ========================================================= */
 
 function analyzeInitialRequest(request) {
-  const classification = classifyRequest(request);
+  const classification =
+    classifyRequest(request);
 
   requirementState.originalRequest = request;
   requirementState.requestType = classification;
@@ -317,7 +349,8 @@ function analyzeInitialRequest(request) {
    * It is deliberately not treated as confirmed until the
    * interview validates it.
    */
-  requirementState.objective = deriveInitialObjective(request);
+  requirementState.objective =
+    deriveInitialObjective(request);
 
   addKnownFact(
     `The user described the request as: "${request}"`,
@@ -326,8 +359,11 @@ function analyzeInitialRequest(request) {
 
   extractInitialFacts(request);
 
-  requirementState.interview.status = "INTERVIEWING";
-  requirementState.validation.status = "NOT_READY";
+  requirementState.interview.status =
+    "INTERVIEWING";
+
+  requirementState.validation.status =
+    "NOT_READY";
 }
 
 function deriveInitialObjective(request) {
@@ -342,7 +378,10 @@ function deriveInitialObjective(request) {
     return "Clarify the desired business outcome.";
   }
 
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  return (
+    cleaned.charAt(0).toUpperCase() +
+    cleaned.slice(1)
+  );
 }
 
 function extractInitialFacts(request) {
@@ -353,9 +392,8 @@ function extractInitialFacts(request) {
    * The eventual LLM service will perform richer extraction.
    */
 
-  const externalUserMatch = text.match(
-    /external users?/i
-  );
+  const externalUserMatch =
+    text.match(/external users?/i);
 
   if (externalUserMatch) {
     addKnownFact(
@@ -364,7 +402,11 @@ function extractInitialFacts(request) {
     );
   }
 
-  if (/mfa|multi[- ]factor|two[- ]factor/i.test(text)) {
+  if (
+    /mfa|multi[- ]factor|two[- ]factor/i.test(
+      text
+    )
+  ) {
     addRequirement(
       "External users must use multi-factor authentication.",
       "user_stated"
@@ -392,13 +434,16 @@ function selectNextQuestion() {
   const candidates = [];
 
   const state = requirementState;
-  const request = normalize(state.originalRequest);
+  const request = normalize(
+    state.originalRequest
+  );
 
   /* Objective ambiguity */
 
   if (
     !state.objective ||
-    state.objective === "Clarify the desired business outcome."
+    state.objective ===
+      "Clarify the desired business outcome."
   ) {
     candidates.push({
       priority: 100,
@@ -449,7 +494,9 @@ function selectNextQuestion() {
   /* MFA-specific contextual questions */
 
   if (
-    /mfa|multi[- ]factor|two[- ]factor/.test(request) &&
+    /mfa|multi[- ]factor|two[- ]factor/.test(
+      request
+    ) &&
     !hasAnswerAbout("scope exceptions")
   ) {
     candidates.push({
@@ -534,14 +581,19 @@ function selectNextQuestion() {
     return null;
   }
 
-  candidates.sort((a, b) => b.priority - a.priority);
+  candidates.sort(
+    (a, b) => b.priority - a.priority
+  );
 
   return candidates[0] || null;
 }
 
 function hasAnswerAbout(topic) {
-  return requirementState.interview.questionsAsked.some((item) =>
-    normalize(item.question).includes(normalize(topic))
+  return requirementState.interview.questionsAsked.some(
+    (item) =>
+      normalize(item.question).includes(
+        normalize(topic)
+      )
   );
 }
 
@@ -554,9 +606,11 @@ function isReadyForValidation() {
 
   const hasObjective =
     Boolean(state.objective) &&
-    state.objective !== "Clarify the desired business outcome.";
+    state.objective !==
+      "Clarify the desired business outcome.";
 
-  const hasRequirements = state.requirements.length > 0;
+  const hasRequirements =
+    state.requirements.length > 0;
 
   const hasScope =
     state.scope.inScope.length > 0 ||
@@ -582,8 +636,12 @@ function isReadyForValidation() {
    Process Answers
    ========================================================= */
 
-function processAnswer(answer, isTBD = false) {
-  const current = requirementState.interview.currentQuestion;
+function processAnswer(
+  answer,
+  isTBD = false
+) {
+  const current =
+    requirementState.interview.currentQuestion;
 
   if (!current) return;
 
@@ -593,10 +651,14 @@ function processAnswer(answer, isTBD = false) {
     id: current.id,
     question: current.question,
     why: current.why,
-    answer: isTBD ? "TBD / Not decided" : cleanAnswer
+    answer: isTBD
+      ? "TBD / Not decided"
+      : cleanAnswer
   };
 
-  requirementState.interview.questionsAsked.push(interviewRecord);
+  requirementState.interview.questionsAsked.push(
+    interviewRecord
+  );
 
   if (isTBD) {
     addToList(
@@ -604,35 +666,58 @@ function processAnswer(answer, isTBD = false) {
       current.question
     );
   } else {
-    applyAnswerToState(current, cleanAnswer);
+    applyAnswerToState(
+      current,
+      cleanAnswer
+    );
   }
 
-  requirementState.interview.currentQuestion = null;
+  requirementState.interview.currentQuestion =
+    null;
 
-  const nextQuestion = selectNextQuestion();
+  const nextQuestion =
+    selectNextQuestion();
 
   if (!nextQuestion) {
-    requirementState.interview.status = "READY_FOR_VALIDATION";
-    requirementState.validation.status = "PENDING_REVIEW";
+    requirementState.interview.status =
+      "READY_FOR_VALIDATION";
+
+    requirementState.validation.status =
+      "PENDING_REVIEW";
   } else {
-    requirementState.interview.status = "INTERVIEWING";
-    requirementState.validation.status = "NOT_READY";
+    requirementState.interview.status =
+      "INTERVIEWING";
+
+    requirementState.validation.status =
+      "NOT_READY";
+
     setCurrentQuestion(nextQuestion);
   }
 }
 
-function applyAnswerToState(question, answer) {
+function applyAnswerToState(
+  question,
+  answer
+) {
   const key = question.key;
   const clean = answer.trim();
 
   switch (key) {
     case "objective":
       requirementState.objective = clean;
-      addKnownFact(clean, "interview_answer");
+
+      addKnownFact(
+        clean,
+        "interview_answer"
+      );
       break;
 
     case "users":
-      addToList(requirementState.usersAndStakeholders, clean);
+      addToList(
+        requirementState.usersAndStakeholders,
+        clean
+      );
+
       addKnownFact(
         `Target users/stakeholders: ${clean}`,
         "interview_answer"
@@ -692,7 +777,10 @@ function applyAnswerToState(question, answer) {
       break;
 
     default:
-      addKnownFact(clean, "interview_answer");
+      addKnownFact(
+        clean,
+        "interview_answer"
+      );
       break;
   }
 }
@@ -700,12 +788,15 @@ function applyAnswerToState(question, answer) {
 function setCurrentQuestion(question) {
   appState.questionCounter += 1;
 
-  requirementState.interview.currentQuestion = {
-    id: `Q-${String(appState.questionCounter).padStart(3, "0")}`,
-    question: question.question,
-    why: question.why,
-    key: question.key
-  };
+  requirementState.interview.currentQuestion =
+    {
+      id: `Q-${String(
+        appState.questionCounter
+      ).padStart(3, "0")}`,
+      question: question.question,
+      why: question.why,
+      key: question.key
+    };
 }
 
 /* =========================================================
@@ -716,12 +807,14 @@ function renderUnderstanding() {
   const typeBadge = $("#request-type");
 
   if (typeBadge) {
-    typeBadge.textContent = getRequestTypeLabel(
-      requirementState.requestType.category
-    );
+    typeBadge.textContent =
+      getRequestTypeLabel(
+        requirementState.requestType.category
+      );
   }
 
-  const understanding = $("#understanding-text");
+  const understanding =
+    $("#understanding-text");
 
   if (understanding) {
     understanding.textContent =
@@ -734,62 +827,86 @@ function renderUnderstanding() {
 
 function renderStateMetrics() {
   const metrics = {
-    "#metric-known": requirementState.knownFacts.length,
-    "#metric-requirements": requirementState.requirements.length,
+    "#metric-known":
+      requirementState.knownFacts.length,
+
+    "#metric-requirements":
+      requirementState.requirements.length,
+
     "#metric-scope":
       requirementState.scope.inScope.length +
       requirementState.scope.outOfScope.length,
+
     "#metric-open":
       requirementState.openDecisions.length +
       requirementState.assumptions.length
   };
 
-  Object.entries(metrics).forEach(([selector, value]) => {
-    const element = $(selector);
+  Object.entries(metrics).forEach(
+    ([selector, value]) => {
+      const element = $(selector);
 
-    if (element) {
-      element.textContent = value;
+      if (element) {
+        element.textContent = value;
+      }
     }
-  });
+  );
 }
 
 function renderInterview() {
-  const history = $("#interview-history");
+  const history =
+    $("#interview-history");
 
   if (history) {
-    history.innerHTML = requirementState.interview.questionsAsked
-      .map(
-        (item) => `
-          <div class="history-item">
-            <div class="history-question">
-              <span>${escapeHtml(item.id)}</span>
-              ${escapeHtml(item.question)}
+    history.innerHTML =
+      requirementState.interview.questionsAsked
+        .map(
+          (item) => `
+            <div class="history-item">
+              <div class="history-question">
+                <span>${escapeHtml(item.id)}</span>
+                ${escapeHtml(item.question)}
+              </div>
+
+              <div class="history-answer">
+                ${escapeHtml(item.answer)}
+              </div>
             </div>
-            <div class="history-answer">
-              ${escapeHtml(item.answer)}
-            </div>
-          </div>
-        `
-      )
-      .join("");
+          `
+        )
+        .join("");
   }
 
-  const question = requirementState.interview.currentQuestion;
+  const question =
+    requirementState.interview.currentQuestion;
 
-  const questionElement = $("#current-question");
-  const whyElement = $("#question-why");
-  const answerInput = $("#current-answer");
-  const readyMessage = $("#ready-message");
-  const continueButton = $("#continue-btn");
-  const tbdButton = $("#tbd-btn");
+  const questionElement =
+    $("#current-question");
+
+  const whyElement =
+    $("#question-why");
+
+  const answerInput =
+    $("#current-answer");
+
+  const readyMessage =
+    $("#ready-message");
+
+  const continueButton =
+    $("#continue-btn");
+
+  const tbdButton =
+    $("#tbd-btn");
 
   if (question) {
     if (questionElement) {
-      questionElement.textContent = question.question;
+      questionElement.textContent =
+        question.question;
     }
 
     if (whyElement) {
-      whyElement.textContent = question.why;
+      whyElement.textContent =
+        question.why;
     }
 
     if (answerInput) {
@@ -842,21 +959,93 @@ function renderInterview() {
   renderStateMetrics();
 }
 
+/* =========================================================
+   Synthesized Requirement
+   ========================================================= */
+
+function buildSynthesizedRequirement() {
+  const state = requirementState;
+
+  const objective =
+    state.objective ||
+    state.originalRequest;
+
+  const users =
+    state.usersAndStakeholders.length
+      ? ` for ${state.usersAndStakeholders.join(
+          ", "
+        )}`
+      : "";
+
+  const scope =
+    state.scope.inScope.length
+      ? ` The change covers ${state.scope.inScope.join(
+          "; "
+        )}.`
+      : "";
+
+  const exclusions =
+    state.scope.outOfScope.length
+      ? ` The scope excludes ${state.scope.outOfScope.join(
+          "; "
+        )}.`
+      : "";
+
+  return `${objective}${users}.${scope}${exclusions}`
+    .replace(/\.\./g, ".")
+    .trim();
+}
+
+/* =========================================================
+   Validation Rendering
+   ========================================================= */
+
 function renderValidation() {
   const state = requirementState;
 
+  const synthesizedRequirement =
+    buildSynthesizedRequirement();
+
   setText(
     "#validation-objective",
-    state.objective || "Not yet defined"
+    state.objective ||
+      "Not yet defined"
   );
 
   setHtml(
     "#validation-requirements",
-    renderList(
-      state.requirements.map(
-        (item) => `<strong>${escapeHtml(item.id)}</strong> — ${escapeHtml(item.statement)}`
-      )
-    )
+    `
+      <div class="synthesized-requirement">
+        <div class="synthesized-label">
+          PROPOSED REQUIREMENT
+        </div>
+
+        <p class="synthesized-text">
+          ${escapeHtml(
+            synthesizedRequirement
+          )}
+        </p>
+      </div>
+
+      ${
+        state.requirements.length
+          ? `
+            <div class="supporting-requirements">
+              <div class="supporting-label">
+                SUPPORTING REQUIREMENTS
+              </div>
+
+              ${renderList(
+                state.requirements.map(
+                  (item) =>
+                    `${item.id} — ${item.statement}`
+                )
+              )}
+            </div>
+          `
+          : ""
+      }
+    `
   );
 
   setHtml(
@@ -865,6 +1054,7 @@ function renderValidation() {
       ...state.scope.inScope.map(
         (item) => `In scope: ${item}`
       ),
+
       ...state.scope.outOfScope.map(
         (item) => `Out of scope: ${item}`
       )
@@ -877,6 +1067,7 @@ function renderValidation() {
       ...state.dependencies.map(
         (item) => `Dependency: ${item}`
       ),
+
       ...state.risks.map(
         (item) => `Risk: ${item}`
       )
@@ -889,6 +1080,7 @@ function renderValidation() {
       ...state.assumptions.map(
         (item) => `Assumption: ${item}`
       ),
+
       ...state.openDecisions.map(
         (item) => `TBD: ${item}`
       )
@@ -897,14 +1089,18 @@ function renderValidation() {
 
   setHtml(
     "#validation-success",
-    renderList(state.successCriteria)
+    renderList(
+      state.successCriteria
+    )
   );
 
-  const status = $("#validation-status");
+  const status =
+    $("#validation-status");
 
   if (status) {
     status.textContent =
-      state.validation.status === "PENDING_REVIEW"
+      state.validation.status ===
+      "PENDING_REVIEW"
         ? "Pending human review"
         : state.validation.status;
   }
@@ -912,110 +1108,197 @@ function renderValidation() {
   renderValidationEditControls();
 }
 
+/* =========================================================
+   Human Validation Editing
+   ========================================================= */
+
 function renderValidationEditControls() {
-  const container = $("#validation-edit-controls");
+  const container =
+    $("#validation-edit-controls");
 
   if (!container) return;
 
   container.innerHTML = `
     <div class="edit-control">
-      <label for="edit-objective">Objective</label>
-      <textarea id="edit-objective" rows="3">${escapeHtml(
+      <label for="edit-objective">
+        Objective
+      </label>
+
+      <textarea
+        id="edit-objective"
+        rows="3"
+      >${escapeHtml(
         requirementState.objective
       )}</textarea>
-      <button type="button" class="secondary-btn" id="save-objective">
+
+      <button
+        type="button"
+        class="secondary-btn"
+        id="save-objective"
+      >
         Save objective
       </button>
     </div>
 
     <div class="edit-control">
-      <label for="edit-requirements">Requirements</label>
-      <textarea id="edit-requirements" rows="5">${escapeHtml(
+      <label for="edit-requirements">
+        Requirements
+      </label>
+
+      <textarea
+        id="edit-requirements"
+        rows="5"
+      >${escapeHtml(
         requirementState.requirements
-          .map((item) => item.statement)
+          .map(
+            (item) =>
+              item.statement
+          )
           .join("\n")
       )}</textarea>
-      <button type="button" class="secondary-btn" id="save-requirements">
+
+      <button
+        type="button"
+        class="secondary-btn"
+        id="save-requirements"
+      >
         Save requirements
       </button>
     </div>
 
     <div class="edit-control">
-      <label for="edit-scope">Scope</label>
-      <textarea id="edit-scope" rows="4">${escapeHtml(
-        requirementState.scope.inScope.join("\n")
+      <label for="edit-scope">
+        Scope
+      </label>
+
+      <textarea
+        id="edit-scope"
+        rows="4"
+      >${escapeHtml(
+        requirementState.scope.inScope.join(
+          "\n"
+        )
       )}</textarea>
-      <button type="button" class="secondary-btn" id="save-scope">
+
+      <button
+        type="button"
+        class="secondary-btn"
+        id="save-scope"
+      >
         Save scope
       </button>
     </div>
 
     <div class="edit-control">
-      <label for="edit-open-decisions">Assumptions / TBDs</label>
-      <textarea id="edit-open-decisions" rows="4">${escapeHtml(
-        requirementState.openDecisions.join("\n")
+      <label for="edit-open-decisions">
+        Assumptions / TBDs
+      </label>
+
+      <textarea
+        id="edit-open-decisions"
+        rows="4"
+      >${escapeHtml(
+        requirementState.openDecisions.join(
+          "\n"
+        )
       )}</textarea>
-      <button type="button" class="secondary-btn" id="save-open-decisions">
+
+      <button
+        type="button"
+        class="secondary-btn"
+        id="save-open-decisions"
+      >
         Save assumptions / TBDs
       </button>
     </div>
   `;
 
-  $("#save-objective")?.addEventListener("click", () => {
-    requirementState.objective =
-      $("#edit-objective").value.trim();
+  $("#save-objective")?.addEventListener(
+    "click",
+    () => {
+      requirementState.objective =
+        $("#edit-objective").value.trim();
 
-    markRequirementChanged();
-  });
+      markRequirementChanged();
+    }
+  );
 
-  $("#save-requirements")?.addEventListener("click", () => {
-    const values = $("#edit-requirements").value
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
+  $("#save-requirements")?.addEventListener(
+    "click",
+    () => {
+      const values =
+        $("#edit-requirements").value
+          .split("\n")
+          .map(
+            (item) => item.trim()
+          )
+          .filter(Boolean);
 
-    requirementState.requirements = values.map(
-      (statement, index) => ({
-        id: `BR-${String(index + 1).padStart(3, "0")}`,
-        statement,
-        source: "human_edited",
-        confidence: "confirmed"
-      })
-    );
+      requirementState.requirements =
+        values.map(
+          (statement, index) => ({
+            id: `BR-${String(
+              index + 1
+            ).padStart(3, "0")}`,
 
-    markRequirementChanged();
-  });
+            statement,
 
-  $("#save-scope")?.addEventListener("click", () => {
-    requirementState.scope.inScope = $("#edit-scope").value
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
+            source: "human_edited",
 
-    markRequirementChanged();
-  });
+            confidence: "confirmed"
+          })
+        );
 
-  $("#save-open-decisions")?.addEventListener("click", () => {
-    requirementState.openDecisions =
-      $("#edit-open-decisions").value
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean);
+      markRequirementChanged();
+    }
+  );
 
-    markRequirementChanged();
-  });
+  $("#save-scope")?.addEventListener(
+    "click",
+    () => {
+      requirementState.scope.inScope =
+        $("#edit-scope").value
+          .split("\n")
+          .map(
+            (item) => item.trim()
+          )
+          .filter(Boolean);
+
+      markRequirementChanged();
+    }
+  );
+
+  $("#save-open-decisions")?.addEventListener(
+    "click",
+    () => {
+      requirementState.openDecisions =
+        $("#edit-open-decisions").value
+          .split("\n")
+          .map(
+            (item) => item.trim()
+          )
+          .filter(Boolean);
+
+      markRequirementChanged();
+    }
+  );
 }
 
 function markRequirementChanged() {
-  requirementState.validation.status = "CHANGES_REQUESTED";
-  requirementState.validation.reviewedByHuman = true;
+  requirementState.validation.status =
+    "CHANGES_REQUESTED";
+
+  requirementState.validation.reviewedByHuman =
+    true;
 
   renderValidation();
 
-  const notice = $("#validation-edit-notice");
+  const notice =
+    $("#validation-edit-notice");
 
   if (notice) {
     notice.hidden = false;
+
     notice.textContent =
       "Changes saved. Review the updated requirement before approving it.";
   }
@@ -1029,132 +1312,224 @@ function generateBRD() {
   const state = requirementState;
 
   if (
-    state.validation.status !== "VALIDATED" ||
+    state.validation.status !==
+      "VALIDATED" ||
     !state.validation.reviewedByHuman
   ) {
     showError(
       "The BRD can only be generated after explicit human approval."
     );
+
     return;
   }
 
-  const requirementsHtml = state.requirements
-    .map(
-      (item) => `
-        <li>
-          <strong>${escapeHtml(item.id)}</strong>
-          — ${escapeHtml(item.statement)}
-          <small>Source: ${escapeHtml(item.source)}</small>
-        </li>
-      `
-    )
-    .join("");
+  const requirementsHtml =
+    state.requirements
+      .map(
+        (item) => `
+          <li>
+            <strong>
+              ${escapeHtml(item.id)}
+            </strong>
 
-  const scopeHtml = renderList([
-    ...state.scope.inScope.map(
-      (item) => `In scope: ${item}`
-    ),
-    ...state.scope.outOfScope.map(
-      (item) => `Out of scope: ${item}`
-    )
-  ]);
+            — ${escapeHtml(
+              item.statement
+            )}
+
+            <small>
+              Source:
+              ${escapeHtml(
+                item.source
+              )}
+            </small>
+          </li>
+        `
+      )
+      .join("");
+
+  const scopeHtml =
+    renderList([
+      ...state.scope.inScope.map(
+        (item) =>
+          `In scope: ${item}`
+      ),
+
+      ...state.scope.outOfScope.map(
+        (item) =>
+          `Out of scope: ${item}`
+      )
+    ]);
 
   const brd = `
     <article class="brd-document">
+
       <header>
-        <div class="brd-label">BUSINESS REQUIREMENTS DOCUMENT</div>
-        <h2>${escapeHtml(state.objective)}</h2>
-        <p class="brd-status">Status: Human Validated</p>
+        <div class="brd-label">
+          BUSINESS REQUIREMENTS DOCUMENT
+        </div>
+
+        <h2>
+          ${escapeHtml(
+            state.objective
+          )}
+        </h2>
+
+        <p class="brd-status">
+          Status: Human Validated
+        </p>
       </header>
 
       <section>
-        <h3>1. Executive Summary</h3>
+        <h3>
+          1. Executive Summary
+        </h3>
+
         <p>
-          This document captures the business requirements for the
-          validated request and is based exclusively on the
+          This document captures the business
+          requirements for the validated request
+          and is based exclusively on the
           human-approved Requirement State.
         </p>
       </section>
 
       <section>
-        <h3>2. Business Problem / Opportunity</h3>
-        <p>${escapeHtml(state.originalRequest)}</p>
+        <h3>
+          2. Business Problem / Opportunity
+        </h3>
+
+        <p>
+          ${escapeHtml(
+            state.originalRequest
+          )}
+        </p>
       </section>
 
       <section>
-        <h3>3. Users &amp; Stakeholders</h3>
-        ${renderList(state.usersAndStakeholders)}
+        <h3>
+          3. Users &amp; Stakeholders
+        </h3>
+
+        ${renderList(
+          state.usersAndStakeholders
+        )}
       </section>
 
       <section>
-        <h3>4. Scope</h3>
+        <h3>
+          4. Scope
+        </h3>
+
         ${scopeHtml}
       </section>
 
       <section>
-        <h3>5. Business Requirements</h3>
+        <h3>
+          5. Business Requirements
+        </h3>
+
         <ol>
           ${requirementsHtml}
         </ol>
       </section>
 
       <section>
-        <h3>6. Business Rules</h3>
-        ${renderList(state.businessRules)}
+        <h3>
+          6. Business Rules
+        </h3>
+
+        ${renderList(
+          state.businessRules
+        )}
       </section>
 
       <section>
-        <h3>7. Business Constraints</h3>
-        ${renderList(state.constraints)}
+        <h3>
+          7. Business Constraints
+        </h3>
+
+        ${renderList(
+          state.constraints
+        )}
       </section>
 
       <section>
-        <h3>8. Dependencies</h3>
-        ${renderList(state.dependencies)}
+        <h3>
+          8. Dependencies
+        </h3>
+
+        ${renderList(
+          state.dependencies
+        )}
       </section>
 
       <section>
-        <h3>9. Success Criteria</h3>
-        ${renderList(state.successCriteria)}
+        <h3>
+          9. Success Criteria
+        </h3>
+
+        ${renderList(
+          state.successCriteria
+        )}
       </section>
 
       <section>
-        <h3>10. Assumptions &amp; TBDs</h3>
+        <h3>
+          10. Assumptions &amp; TBDs
+        </h3>
+
         ${renderList([
           ...state.assumptions.map(
-            (item) => `Assumption: ${item}`
+            (item) =>
+              `Assumption: ${item}`
           ),
+
           ...state.openDecisions.map(
-            (item) => `TBD: ${item}`
+            (item) =>
+              `TBD: ${item}`
           )
         ])}
       </section>
 
       <section>
-        <h3>11. Risks</h3>
-        ${renderList(state.risks)}
+        <h3>
+          11. Risks
+        </h3>
+
+        ${renderList(
+          state.risks
+        )}
       </section>
 
       <section>
-        <h3>12. Acceptance Criteria</h3>
+        <h3>
+          12. Acceptance Criteria
+        </h3>
+
         ${renderList(
           state.successCriteria.length
             ? state.successCriteria
             : [
                 "Business stakeholders confirm that the documented requirements accurately represent the intended outcome.",
+
                 "All material scope, assumptions, dependencies, and open decisions are explicitly documented."
               ]
         )}
       </section>
+
     </article>
   `;
 
-  setHtml("#brd-content", brd);
+  setHtml(
+    "#brd-content",
+    brd
+  );
 
-  const traceability = $("#traceability-banner");
+  const traceability =
+    $("#traceability-banner");
 
   if (traceability) {
     traceability.hidden = false;
+
     traceability.textContent =
       "Traceability: BRD requirements are generated from the human-validated Requirement State.";
   }
@@ -1183,10 +1558,15 @@ function setHtml(selector, value) {
 }
 
 function renderList(items) {
-  const filtered = items.filter(Boolean);
+  const filtered =
+    items.filter(Boolean);
 
   if (!filtered.length) {
-    return `<p class="empty-state">Not specified.</p>`;
+    return `
+      <p class="empty-state">
+        Not specified.
+      </p>
+    `;
   }
 
   return `
@@ -1194,7 +1574,11 @@ function renderList(items) {
       ${filtered
         .map(
           (item) =>
-            `<li>${escapeHtml(stripHtml(String(item)))}</li>`
+            `<li>${escapeHtml(
+              stripHtml(
+                String(item)
+              )
+            )}</li>`
         )
         .join("")}
     </ul>
@@ -1202,7 +1586,10 @@ function renderList(items) {
 }
 
 function stripHtml(value) {
-  return value.replace(/<[^>]*>/g, "");
+  return value.replace(
+    /<[^>]*>/g,
+    ""
+  );
 }
 
 /* =========================================================
@@ -1212,30 +1599,42 @@ function stripHtml(value) {
 function handleAnalyze() {
   clearError();
 
-  const input = $("#requirement");
+  const input =
+    $("#requirement");
 
   if (!input) return;
 
-  const request = input.value.trim();
+  const request =
+    input.value.trim();
 
   if (!request) {
     showError(
       "Please enter a business request before continuing."
     );
+
     input.focus();
+
     return;
   }
 
-  setLoading(true, "Analyzing the request…");
+  setLoading(
+    true,
+    "Analyzing the request…"
+  );
 
   window.setTimeout(() => {
     try {
-      analyzeInitialRequest(request);
+      analyzeInitialRequest(
+        request
+      );
 
-      const firstQuestion = selectNextQuestion();
+      const firstQuestion =
+        selectNextQuestion();
 
       if (firstQuestion) {
-        setCurrentQuestion(firstQuestion);
+        setCurrentQuestion(
+          firstQuestion
+        );
       }
 
       renderUnderstanding();
@@ -1244,6 +1643,7 @@ function handleAnalyze() {
       goToStep(2);
     } catch (error) {
       console.error(error);
+
       showError(
         "Something went wrong while analyzing the request. Please try again."
       );
@@ -1256,25 +1656,35 @@ function handleAnalyze() {
 function handleContinue() {
   clearError();
 
-  const answerInput = $("#current-answer");
+  const answerInput =
+    $("#current-answer");
 
   if (!answerInput) return;
 
-  const answer = answerInput.value.trim();
+  const answer =
+    answerInput.value.trim();
 
   if (!answer) {
     showError(
       "Please provide an answer or choose “Mark as TBD.”"
     );
+
     answerInput.focus();
+
     return;
   }
 
-  setLoading(true, "Updating the requirement state…");
+  setLoading(
+    true,
+    "Updating the requirement state…"
+  );
 
   window.setTimeout(() => {
     try {
-      processAnswer(answer, false);
+      processAnswer(
+        answer,
+        false
+      );
 
       renderUnderstanding();
       renderInterview();
@@ -1287,6 +1697,7 @@ function handleContinue() {
       }
     } catch (error) {
       console.error(error);
+
       showError(
         "The answer could not be processed. Please try again."
       );
@@ -1299,16 +1710,23 @@ function handleContinue() {
 function handleTBD() {
   clearError();
 
-  setLoading(true, "Recording this as an open decision…");
+  setLoading(
+    true,
+    "Recording this as an open decision…"
+  );
 
   window.setTimeout(() => {
     try {
-      processAnswer("", true);
+      processAnswer(
+        "",
+        true
+      );
 
       renderUnderstanding();
       renderInterview();
     } catch (error) {
       console.error(error);
+
       showError(
         "The TBD response could not be recorded."
       );
@@ -1328,29 +1746,43 @@ function handleReview() {
     showError(
       "The requirement is not ready for validation yet."
     );
+
     return;
   }
 
-  requirementState.validation.status = "PENDING_REVIEW";
+  requirementState.validation.status =
+    "PENDING_REVIEW";
 
   renderValidation();
+
   goToStep(3);
 
-  focusElement("#validation-heading");
+  focusElement(
+    "#validation-heading"
+  );
 }
 
 function handleContinueInterview() {
-  requirementState.validation.status = "CHANGES_REQUESTED";
-  requirementState.validation.reviewedByHuman = true;
-  requirementState.interview.status = "INTERVIEWING";
+  requirementState.validation.status =
+    "CHANGES_REQUESTED";
 
-  const nextQuestion = selectNextQuestion();
+  requirementState.validation.reviewedByHuman =
+    true;
+
+  requirementState.interview.status =
+    "INTERVIEWING";
+
+  const nextQuestion =
+    selectNextQuestion();
 
   if (nextQuestion) {
-    setCurrentQuestion(nextQuestion);
+    setCurrentQuestion(
+      nextQuestion
+    );
   }
 
   renderInterview();
+
   goToStep(2);
 }
 
@@ -1358,31 +1790,46 @@ function handleApprove() {
   clearError();
 
   /*
-   * Explicit human action is the only path to VALIDATED.
+   * Explicit human action is the only path
+   * to VALIDATED.
    */
-  requirementState.validation.status = "VALIDATED";
-  requirementState.validation.reviewedByHuman = true;
+  requirementState.validation.status =
+    "VALIDATED";
+
+  requirementState.validation.reviewedByHuman =
+    true;
 
   generateBRD();
 }
 
 function handleCopyBRD() {
-  const brd = $("#brd-content");
+  const brd =
+    $("#brd-content");
 
   if (!brd) return;
 
   navigator.clipboard
-    ?.writeText(brd.innerText)
+    ?.writeText(
+      brd.innerText
+    )
     .then(() => {
-      const button = $("#copy-brd-btn");
+      const button =
+        $("#copy-brd-btn");
 
       if (button) {
-        const original = button.textContent;
-        button.textContent = "Copied";
+        const original =
+          button.textContent;
 
-        window.setTimeout(() => {
-          button.textContent = original;
-        }, 1500);
+        button.textContent =
+          "Copied";
+
+        window.setTimeout(
+          () => {
+            button.textContent =
+              original;
+          },
+          1500
+        );
       }
     })
     .catch(() => {
@@ -1401,7 +1848,8 @@ function restart() {
    ========================================================= */
 
 function loadSample() {
-  const input = $("#requirement");
+  const input =
+    $("#requirement");
 
   if (!input) return;
 
@@ -1409,6 +1857,7 @@ function loadSample() {
     "We need to add MFA authentication for external users.";
 
   updateCharacterCount();
+
   input.focus();
 }
 
@@ -1417,12 +1866,18 @@ function loadSample() {
    ========================================================= */
 
 function updateCharacterCount() {
-  const input = $("#requirement");
-  const counter = $("#character-count");
+  const input =
+    $("#requirement");
 
-  if (!input || !counter) return;
+  const counter =
+    $("#character-count");
 
-  counter.textContent = `${input.value.length} characters`;
+  if (!input || !counter) {
+    return;
+  }
+
+  counter.textContent =
+    `${input.value.length} characters`;
 }
 
 /* =========================================================
@@ -1435,7 +1890,8 @@ function handleAnswerKeydown(event) {
    */
   if (
     event.key === "Enter" &&
-    (event.ctrlKey || event.metaKey)
+    (event.ctrlKey ||
+      event.metaKey)
   ) {
     event.preventDefault();
 
@@ -1509,43 +1965,52 @@ function initialize() {
    * Progress navigation is intentionally restricted.
    * Users should not be able to bypass the validation gate.
    */
-  $$(".progress-step").forEach((step) => {
-    step.addEventListener("click", () => {
-      const target = Number(step.dataset.step);
+  $$(".progress-step").forEach(
+    (step) => {
+      step.addEventListener(
+        "click",
+        () => {
+          const target =
+            Number(
+              step.dataset.step
+            );
 
-      if (target === 1) {
-        goToStep(1);
-        return;
-      }
+          if (target === 1) {
+            goToStep(1);
+            return;
+          }
 
-      if (
-        target === 2 &&
-        requirementState.originalRequest
-      ) {
-        goToStep(2);
-        return;
-      }
+          if (
+            target === 2 &&
+            requirementState.originalRequest
+          ) {
+            goToStep(2);
+            return;
+          }
 
-      if (
-        target === 3 &&
-        requirementState.validation.status ===
-          "PENDING_REVIEW"
-      ) {
-        goToStep(3);
-        return;
-      }
+          if (
+            target === 3 &&
+            requirementState.validation.status ===
+              "PENDING_REVIEW"
+          ) {
+            goToStep(3);
+            return;
+          }
 
-      if (
-        target === 4 &&
-        requirementState.validation.status ===
-          "VALIDATED"
-      ) {
-        goToStep(4);
-      }
-    });
-  });
+          if (
+            target === 4 &&
+            requirementState.validation.status ===
+              "VALIDATED"
+          ) {
+            goToStep(4);
+          }
+        }
+      );
+    }
+  );
 
   updateCharacterCount();
+
   goToStep(1);
 }
 
