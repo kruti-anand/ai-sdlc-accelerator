@@ -965,33 +965,33 @@ function buildSynthesizedRequirement() {
 
   const users =
     state.usersAndStakeholders.length
-      ? ` The intended users or stakeholders are ${state.usersAndStakeholders.join(
+      ? ` Intended users or stakeholders: ${state.usersAndStakeholders.join(
           ", "
         )}.`
       : "";
 
   const scope =
     state.scope.inScope.length
-      ? ` The change covers ${state.scope.inScope.join(
+      ? ` Scope includes: ${state.scope.inScope.join(
           "; "
         )}.`
       : "";
 
   const exclusions =
     state.scope.outOfScope.length
-      ? ` The scope excludes ${state.scope.outOfScope.join(
+      ? ` Scope excludes: ${state.scope.outOfScope.join(
           "; "
         )}.`
       : "";
 
   const openDecisions =
     state.openDecisions.length
-      ? ` The following items remain open decisions: ${state.openDecisions.join(
+      ? ` Open decisions: ${state.openDecisions.join(
           "; "
         )}.`
       : "";
 
-  return `${objective}${users}${scope}${exclusions}${openDecisions}`.trim();
+  return `${objective}.${users}${scope}${exclusions}${openDecisions}`.trim();
 }
 
 /* =========================================================
@@ -1030,7 +1030,7 @@ function renderValidation() {
           ? `
             <div class="supporting-requirements">
               <div class="supporting-label">
-                BUSINESS REQUIREMENTS
+                CONFIRMED BUSINESS REQUIREMENTS
               </div>
 
               ${renderRequirementList(
