@@ -1,4 +1,3 @@
-javascript
 /* =========================================================
    AI Requirements Engineering Copilot
    Version 1 — Deterministic prototype
@@ -89,18 +88,16 @@ function escapeHtml(value) {
 }
 
 function normalize(value) {
-  return String(value || "").trim().toLowerCase();
-}
-
-function unique(values) {
-  return [...new Set(values.filter(Boolean))];
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 /* =========================================================
    Accessibility / Status
    ========================================================= */
 
-function setLoading(isLoading, message = "Working…") {
+function setLoading(isLoading, message = "Working...") {
   appState.loading = isLoading;
 
   const analyzeButton = $("#analyze-btn");
@@ -344,11 +341,6 @@ function analyzeInitialRequest(request) {
   requirementState.originalRequest = request;
   requirementState.requestType = classification;
 
-  /*
-   * The objective starts as a conservative interpretation.
-   * It is deliberately not treated as confirmed until the
-   * interview validates it.
-   */
   requirementState.objective =
     deriveInitialObjective(request);
 
@@ -364,6 +356,9 @@ function analyzeInitialRequest(request) {
 
   requirementState.validation.status =
     "NOT_READY";
+
+  requirementState.validation.reviewedByHuman =
+    false;
 }
 
 function deriveInitialObjective(request) {
@@ -386,11 +381,6 @@ function deriveInitialObjective(request) {
 
 function extractInitialFacts(request) {
   const text = request;
-
-  /*
-   * Lightweight extraction for the deterministic prototype.
-   * The eventual LLM service will perform richer extraction.
-   */
 
   const externalUserMatch =
     text.match(/external users?/i);
@@ -441,9 +431,10 @@ function selectNextQuestion() {
   /* Objective ambiguity */
 
   if (
-    !state.objective ||
-    state.objective ===
-      "Clarify the desired business outcome."
+    (!state.objective ||
+      state.objective ===
+        "Clarify the desired business outcome.") &&
+    !hasAnsweredKey("objective")
   ) {
     candidates.push({
       priority: 100,
@@ -463,7 +454,8 @@ function selectNextQuestion() {
       /external users|internal users|customers|employees|users/i.test(
         item.statement
       )
-    )
+    ) &&
+    !hasAnsweredKey("users")
   ) {
     candidates.push({
       priority: 95,
@@ -479,7 +471,8 @@ function selectNextQuestion() {
 
   if (
     state.scope.inScope.length === 0 &&
-    state.scope.outOfScope.length === 0
+    state.scope.outOfScope.length === 0 &&
+    !hasAnsweredKey("scope")
   ) {
     candidates.push({
       priority: 90,
@@ -491,13 +484,13 @@ function selectNextQuestion() {
     });
   }
 
-  /* MFA-specific contextual questions */
+  /* MFA-specific contextual question */
 
   if (
     /mfa|multi[- ]factor|two[- ]factor/.test(
       request
     ) &&
-    !hasAnswerAbout("scope exceptions")
+    !hasAnsweredKey("mfa_scope")
   ) {
     candidates.push({
       priority: 92,
@@ -513,7 +506,8 @@ function selectNextQuestion() {
 
   if (
     state.businessRules.length === 0 &&
-    state.requirements.length > 0
+    state.requirements.length > 0 &&
+    !hasAnsweredKey("business_rules")
   ) {
     candidates.push({
       priority: 75,
@@ -529,7 +523,8 @@ function selectNextQuestion() {
 
   if (
     state.constraints.length === 0 &&
-    state.requirements.length > 0
+    state.requirements.length > 0 &&
+    !hasAnsweredKey("constraints")
   ) {
     candidates.push({
       priority: 70,
@@ -545,7 +540,8 @@ function selectNextQuestion() {
 
   if (
     state.successCriteria.length === 0 &&
-    state.requirements.length > 0
+    state.requirements.length > 0 &&
+    !hasAnsweredKey("success")
   ) {
     candidates.push({
       priority: 65,
@@ -561,7 +557,8 @@ function selectNextQuestion() {
 
   if (
     state.dependencies.length === 0 &&
-    state.requirements.length > 0
+    state.requirements.length > 0 &&
+    !hasAnsweredKey("dependencies")
   ) {
     candidates.push({
       priority: 60,
@@ -572,10 +569,6 @@ function selectNextQuestion() {
         "Known business dependencies help identify delivery risks and ownership."
     });
   }
-
-  /*
-   * If enough meaningful information exists, stop.
-   */
 
   if (isReadyForValidation()) {
     return null;
@@ -588,12 +581,9 @@ function selectNextQuestion() {
   return candidates[0] || null;
 }
 
-function hasAnswerAbout(topic) {
+function hasAnsweredKey(key) {
   return requirementState.interview.questionsAsked.some(
-    (item) =>
-      normalize(item.question).includes(
-        normalize(topic)
-      )
+    (item) => item.key === key
   );
 }
 
@@ -620,16 +610,12 @@ function isReadyForValidation() {
   const hasMeaningfulInterview =
     state.interview.questionsAsked.length >= 3;
 
-  if (
+  return (
     hasObjective &&
     hasRequirements &&
     hasScope &&
     hasMeaningfulInterview
-  ) {
-    return true;
-  }
-
-  return false;
+  );
 }
 
 /* =========================================================
@@ -649,6 +635,7 @@ function processAnswer(
 
   const interviewRecord = {
     id: current.id,
+    key: current.key,
     question: current.question,
     why: current.why,
     answer: isTBD
@@ -684,12 +671,18 @@ function processAnswer(
 
     requirementState.validation.status =
       "PENDING_REVIEW";
+
+    requirementState.validation.reviewedByHuman =
+      false;
   } else {
     requirementState.interview.status =
       "INTERVIEWING";
 
     requirementState.validation.status =
       "NOT_READY";
+
+    requirementState.validation.reviewedByHuman =
+      false;
 
     setCurrentQuestion(nextQuestion);
   }
@@ -788,15 +781,14 @@ function applyAnswerToState(
 function setCurrentQuestion(question) {
   appState.questionCounter += 1;
 
-  requirementState.interview.currentQuestion =
-    {
-      id: `Q-${String(
-        appState.questionCounter
-      ).padStart(3, "0")}`,
-      question: question.question,
-      why: question.why,
-      key: question.key
-    };
+  requirementState.interview.currentQuestion = {
+    id: `Q-${String(
+      appState.questionCounter
+    ).padStart(3, "0")}`,
+    key: question.key,
+    question: question.question,
+    why: question.why
+  };
 }
 
 /* =========================================================
@@ -968,13 +960,14 @@ function buildSynthesizedRequirement() {
 
   const objective =
     state.objective ||
-    state.originalRequest;
+    state.originalRequest ||
+    "The requested business outcome has not yet been defined.";
 
   const users =
     state.usersAndStakeholders.length
-      ? ` for ${state.usersAndStakeholders.join(
+      ? ` The intended users or stakeholders are ${state.usersAndStakeholders.join(
           ", "
-        )}`
+        )}.`
       : "";
 
   const scope =
@@ -991,9 +984,14 @@ function buildSynthesizedRequirement() {
         )}.`
       : "";
 
-  return `${objective}${users}.${scope}${exclusions}`
-    .replace(/\.\./g, ".")
-    .trim();
+  const openDecisions =
+    state.openDecisions.length
+      ? ` The following items remain open decisions: ${state.openDecisions.join(
+          "; "
+        )}.`
+      : "";
+
+  return `${objective}${users}${scope}${exclusions}${openDecisions}`.trim();
 }
 
 /* =========================================================
@@ -1017,7 +1015,7 @@ function renderValidation() {
     `
       <div class="synthesized-requirement">
         <div class="synthesized-label">
-          PROPOSED REQUIREMENT
+          REQUIREMENT SUMMARY
         </div>
 
         <p class="synthesized-text">
@@ -1032,14 +1030,11 @@ function renderValidation() {
           ? `
             <div class="supporting-requirements">
               <div class="supporting-label">
-                SUPPORTING REQUIREMENTS
+                BUSINESS REQUIREMENTS
               </div>
 
-              ${renderList(
-                state.requirements.map(
-                  (item) =>
-                    `${item.id} — ${item.statement}`
-                )
+              ${renderRequirementList(
+                state.requirements
               )}
             </div>
           `
@@ -1052,11 +1047,13 @@ function renderValidation() {
     "#validation-scope",
     renderList([
       ...state.scope.inScope.map(
-        (item) => `In scope: ${item}`
+        (item) =>
+          `In scope: ${item}`
       ),
 
       ...state.scope.outOfScope.map(
-        (item) => `Out of scope: ${item}`
+        (item) =>
+          `Out of scope: ${item}`
       )
     ])
   );
@@ -1065,11 +1062,13 @@ function renderValidation() {
     "#validation-dependencies",
     renderList([
       ...state.dependencies.map(
-        (item) => `Dependency: ${item}`
+        (item) =>
+          `Dependency: ${item}`
       ),
 
       ...state.risks.map(
-        (item) => `Risk: ${item}`
+        (item) =>
+          `Risk: ${item}`
       )
     ])
   );
@@ -1078,11 +1077,13 @@ function renderValidation() {
     "#validation-assumptions",
     renderList([
       ...state.assumptions.map(
-        (item) => `Assumption: ${item}`
+        (item) =>
+          `Assumption: ${item}`
       ),
 
       ...state.openDecisions.map(
-        (item) => `TBD: ${item}`
+        (item) =>
+          `TBD: ${item}`
       )
     ])
   );
@@ -1102,10 +1103,43 @@ function renderValidation() {
       state.validation.status ===
       "PENDING_REVIEW"
         ? "Pending human review"
+        : state.validation.status ===
+          "CHANGES_REQUESTED"
+        ? "Changes requested"
+        : state.validation.status ===
+          "VALIDATED"
+        ? "Human validated"
         : state.validation.status;
   }
 
   renderValidationEditControls();
+}
+
+function renderRequirementList(requirements) {
+  if (!requirements.length) {
+    return `
+      <p class="empty-state">
+        Not specified.
+      </p>
+    `;
+  }
+
+  return `
+    <ul>
+      ${requirements
+        .map(
+          (item) => `
+            <li>
+              <strong>
+                ${escapeHtml(item.id)}
+              </strong>
+              — ${escapeHtml(item.statement)}
+            </li>
+          `
+        )
+        .join("")}
+    </ul>
+  `;
 }
 
 /* =========================================================
@@ -1191,7 +1225,7 @@ function renderValidationEditControls() {
 
     <div class="edit-control">
       <label for="edit-open-decisions">
-        Assumptions / TBDs
+        TBDs
       </label>
 
       <textarea
@@ -1208,7 +1242,7 @@ function renderValidationEditControls() {
         class="secondary-btn"
         id="save-open-decisions"
       >
-        Save assumptions / TBDs
+        Save TBDs
       </button>
     </div>
   `;
@@ -1230,7 +1264,8 @@ function renderValidationEditControls() {
         $("#edit-requirements").value
           .split("\n")
           .map(
-            (item) => item.trim()
+            (item) =>
+              item.trim()
           )
           .filter(Boolean);
 
@@ -1260,7 +1295,8 @@ function renderValidationEditControls() {
         $("#edit-scope").value
           .split("\n")
           .map(
-            (item) => item.trim()
+            (item) =>
+              item.trim()
           )
           .filter(Boolean);
 
@@ -1275,7 +1311,8 @@ function renderValidationEditControls() {
         $("#edit-open-decisions").value
           .split("\n")
           .map(
-            (item) => item.trim()
+            (item) =>
+              item.trim()
           )
           .filter(Boolean);
 
@@ -1289,7 +1326,7 @@ function markRequirementChanged() {
     "CHANGES_REQUESTED";
 
   requirementState.validation.reviewedByHuman =
-    true;
+    false;
 
   renderValidation();
 
@@ -1575,21 +1612,12 @@ function renderList(items) {
         .map(
           (item) =>
             `<li>${escapeHtml(
-              stripHtml(
-                String(item)
-              )
+              String(item)
             )}</li>`
         )
         .join("")}
     </ul>
   `;
-}
-
-function stripHtml(value) {
-  return value.replace(
-    /<[^>]*>/g,
-    ""
-  );
 }
 
 /* =========================================================
@@ -1619,7 +1647,7 @@ function handleAnalyze() {
 
   setLoading(
     true,
-    "Analyzing the request…"
+    "Analyzing the request..."
   );
 
   window.setTimeout(() => {
@@ -1666,7 +1694,7 @@ function handleContinue() {
 
   if (!answer) {
     showError(
-      "Please provide an answer or choose “Mark as TBD.”"
+      'Please provide an answer or choose "Mark as TBD."'
     );
 
     answerInput.focus();
@@ -1676,7 +1704,7 @@ function handleContinue() {
 
   setLoading(
     true,
-    "Updating the requirement state…"
+    "Updating the requirement state..."
   );
 
   window.setTimeout(() => {
@@ -1712,7 +1740,7 @@ function handleTBD() {
 
   setLoading(
     true,
-    "Recording this as an open decision…"
+    "Recording this as an open decision..."
   );
 
   window.setTimeout(() => {
@@ -1724,6 +1752,13 @@ function handleTBD() {
 
       renderUnderstanding();
       renderInterview();
+
+      if (
+        requirementState.interview.status ===
+        "READY_FOR_VALIDATION"
+      ) {
+        renderValidation();
+      }
     } catch (error) {
       console.error(error);
 
@@ -1753,6 +1788,9 @@ function handleReview() {
   requirementState.validation.status =
     "PENDING_REVIEW";
 
+  requirementState.validation.reviewedByHuman =
+    false;
+
   renderValidation();
 
   goToStep(3);
@@ -1763,11 +1801,13 @@ function handleReview() {
 }
 
 function handleContinueInterview() {
+  clearError();
+
   requirementState.validation.status =
     "CHANGES_REQUESTED";
 
   requirementState.validation.reviewedByHuman =
-    true;
+    false;
 
   requirementState.interview.status =
     "INTERVIEWING";
@@ -1779,6 +1819,12 @@ function handleContinueInterview() {
     setCurrentQuestion(
       nextQuestion
     );
+  } else {
+    requirementState.interview.status =
+      "READY_FOR_VALIDATION";
+
+    requirementState.validation.status =
+      "PENDING_REVIEW";
   }
 
   renderInterview();
@@ -1789,14 +1835,27 @@ function handleContinueInterview() {
 function handleApprove() {
   clearError();
 
+  const state = requirementState;
+
+  if (
+    !state.objective ||
+    !state.requirements.length
+  ) {
+    showError(
+      "An objective and at least one business requirement are needed before approval."
+    );
+
+    return;
+  }
+
   /*
    * Explicit human action is the only path
    * to VALIDATED.
    */
-  requirementState.validation.status =
+  state.validation.status =
     "VALIDATED";
 
-  requirementState.validation.reviewedByHuman =
+  state.validation.reviewedByHuman =
     true;
 
   generateBRD();
@@ -1808,8 +1867,19 @@ function handleCopyBRD() {
 
   if (!brd) return;
 
+  if (
+    !navigator.clipboard ||
+    !navigator.clipboard.writeText
+  ) {
+    showError(
+      "Automatic copy is not available in this browser. You can select and copy the BRD text manually."
+    );
+
+    return;
+  }
+
   navigator.clipboard
-    ?.writeText(
+    .writeText(
       brd.innerText
     )
     .then(() => {
