@@ -1,13 +1,9 @@
+"use strict";
+
 /* =========================================================
    AI Requirements Engineering Copilot
-   Version 1 — Deterministic prototype
-   ---------------------------------------------------------
-   The UI and state model are designed so a real LLM-backed
-   interview service can replace the prototype question
-   selection later without changing the product flow.
+   Deterministic portfolio prototype
    ========================================================= */
-
-"use strict";
 
 /* =========================================================
    Requirement State
@@ -94,6 +90,56 @@ function normalize(value) {
 }
 
 /* =========================================================
+   Scroll / Navigation
+   ========================================================= */
+
+function scrollToElement(selector) {
+  const element = $(selector);
+
+  if (!element) return;
+
+  window.setTimeout(() => {
+    element.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }, 50);
+}
+
+function goToStep(step, scrollTarget = null) {
+  appState.currentStep = step;
+
+  $$(".step-panel").forEach((panel) => {
+    const panelStep = Number(panel.dataset.step);
+
+    panel.hidden = panelStep !== step;
+  });
+
+  $$(".progress-step").forEach((item) => {
+    const itemStep = Number(item.dataset.step);
+
+    item.classList.toggle(
+      "active",
+      itemStep === step
+    );
+
+    item.classList.toggle(
+      "complete",
+      itemStep < step
+    );
+
+    item.setAttribute(
+      "aria-current",
+      itemStep === step ? "step" : "false"
+    );
+  });
+
+  if (scrollTarget) {
+    scrollToElement(scrollTarget);
+  }
+}
+
+/* =========================================================
    Accessibility / Status
    ========================================================= */
 
@@ -164,46 +210,8 @@ function focusElement(selector) {
   if (element) {
     window.setTimeout(() => {
       element.focus();
-    }, 50);
+    }, 100);
   }
-}
-
-/* =========================================================
-   Navigation
-   ========================================================= */
-
-function goToStep(step) {
-  appState.currentStep = step;
-
-  $$(".step-panel").forEach((panel) => {
-    const panelStep = Number(panel.dataset.step);
-
-    panel.hidden = panelStep !== step;
-  });
-
-  $$(".progress-step").forEach((item) => {
-    const itemStep = Number(item.dataset.step);
-
-    item.classList.toggle(
-      "active",
-      itemStep === step
-    );
-
-    item.classList.toggle(
-      "complete",
-      itemStep < step
-    );
-
-    item.setAttribute(
-      "aria-current",
-      itemStep === step ? "step" : "false"
-    );
-  });
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
 }
 
 /* =========================================================
@@ -375,17 +383,14 @@ function deriveInitialObjective(request) {
 
   return (
     cleaned.charAt(0).toUpperCase() +
-    cleaned.slice(1)
+    cleaned.slice(1).replace(/[.!?]+$/, "")
   );
 }
 
 function extractInitialFacts(request) {
   const text = request;
 
-  const externalUserMatch =
-    text.match(/external users?/i);
-
-  if (externalUserMatch) {
+  if (/external users?/i.test(text)) {
     addKnownFact(
       "The request involves external users.",
       "original_request"
@@ -413,11 +418,6 @@ function extractInitialFacts(request) {
 
 /* =========================================================
    Contextual Question Selection
-   ---------------------------------------------------------
-   This is NOT a fixed questionnaire.
-
-   The prototype evaluates the current state after every
-   answer and chooses the highest-impact unresolved area.
    ========================================================= */
 
 function selectNextQuestion() {
@@ -427,8 +427,6 @@ function selectNextQuestion() {
   const request = normalize(
     state.originalRequest
   );
-
-  /* Objective ambiguity */
 
   if (
     (!state.objective ||
@@ -445,8 +443,6 @@ function selectNextQuestion() {
         "Clarifying the intended outcome helps define what the requirement must accomplish."
     });
   }
-
-  /* User / population ambiguity */
 
   if (
     state.usersAndStakeholders.length === 0 &&
@@ -467,8 +463,6 @@ function selectNextQuestion() {
     });
   }
 
-  /* Scope ambiguity */
-
   if (
     state.scope.inScope.length === 0 &&
     state.scope.outOfScope.length === 0 &&
@@ -483,8 +477,6 @@ function selectNextQuestion() {
         "Clear scope prevents the requirement from expanding beyond the intended outcome."
     });
   }
-
-  /* MFA-specific contextual question */
 
   if (
     /mfa|multi[- ]factor|two[- ]factor/.test(
@@ -502,8 +494,6 @@ function selectNextQuestion() {
     });
   }
 
-  /* Business rules */
-
   if (
     state.businessRules.length === 0 &&
     state.requirements.length > 0 &&
@@ -518,8 +508,6 @@ function selectNextQuestion() {
         "Business rules can materially change how the requirement should behave."
     });
   }
-
-  /* Constraints */
 
   if (
     state.constraints.length === 0 &&
@@ -536,8 +524,6 @@ function selectNextQuestion() {
     });
   }
 
-  /* Success criteria */
-
   if (
     state.successCriteria.length === 0 &&
     state.requirements.length > 0 &&
@@ -552,8 +538,6 @@ function selectNextQuestion() {
         "Success criteria provide a measurable way to determine whether the requirement has delivered its intended value."
     });
   }
-
-  /* Dependencies */
 
   if (
     state.dependencies.length === 0 &&
@@ -697,7 +681,10 @@ function applyAnswerToState(
 
   switch (key) {
     case "objective":
-      requirementState.objective = clean;
+      requirementState.objective = clean.replace(
+        /[.!?]+$/,
+        ""
+      );
 
       addKnownFact(
         clean,
@@ -991,7 +978,7 @@ function buildSynthesizedRequirement() {
         )}.`
       : "";
 
-  return `${objective}.${users}${scope}${exclusions}${openDecisions}`.trim();
+  return `${objective.replace(/[.!?]+$/, "")}.${users}${scope}${exclusions}${openDecisions}`.trim();
 }
 
 /* =========================================================
@@ -1251,7 +1238,9 @@ function renderValidationEditControls() {
     "click",
     () => {
       requirementState.objective =
-        $("#edit-objective").value.trim();
+        $("#edit-objective").value
+          .trim()
+          .replace(/[.!?]+$/, "");
 
       markRequirementChanged();
     }
@@ -1571,7 +1560,7 @@ function generateBRD() {
       "Traceability: BRD requirements are generated from the human-validated Requirement State.";
   }
 
-  goToStep(4);
+  goToStep(4, "#brd-content");
 }
 
 /* =========================================================
@@ -1668,7 +1657,14 @@ function handleAnalyze() {
       renderUnderstanding();
       renderInterview();
 
-      goToStep(2);
+      /*
+       * Move directly to the interview.
+       * Do not send the user back to the top of the page.
+       */
+      goToStep(
+        2,
+        "#step-2"
+      );
     } catch (error) {
       console.error(error);
 
@@ -1722,6 +1718,14 @@ function handleContinue() {
         "READY_FOR_VALIDATION"
       ) {
         renderValidation();
+
+        /*
+         * Keep the user at the end of the interview
+         * and show the review action.
+         */
+        scrollToElement(
+          "#ready-message"
+        );
       }
     } catch (error) {
       console.error(error);
@@ -1758,6 +1762,10 @@ function handleTBD() {
         "READY_FOR_VALIDATION"
       ) {
         renderValidation();
+
+        scrollToElement(
+          "#ready-message"
+        );
       }
     } catch (error) {
       console.error(error);
@@ -1793,7 +1801,15 @@ function handleReview() {
 
   renderValidation();
 
-  goToStep(3);
+  /*
+   * Move directly to the validation heading.
+   * The user should immediately see:
+   * "Does this reflect what you need?"
+   */
+  goToStep(
+    3,
+    "#validation-heading"
+  );
 
   focusElement(
     "#validation-heading"
@@ -1829,7 +1845,10 @@ function handleContinueInterview() {
 
   renderInterview();
 
-  goToStep(2);
+  goToStep(
+    2,
+    "#step-2"
+  );
 }
 
 function handleApprove() {
@@ -1955,9 +1974,6 @@ function updateCharacterCount() {
    ========================================================= */
 
 function handleAnswerKeydown(event) {
-  /*
-   * Ctrl/Cmd + Enter submits the current answer.
-   */
   if (
     event.key === "Enter" &&
     (event.ctrlKey ||
@@ -2046,7 +2062,7 @@ function initialize() {
             );
 
           if (target === 1) {
-            goToStep(1);
+            goToStep(1, "#step-1");
             return;
           }
 
@@ -2054,7 +2070,7 @@ function initialize() {
             target === 2 &&
             requirementState.originalRequest
           ) {
-            goToStep(2);
+            goToStep(2, "#step-2");
             return;
           }
 
@@ -2063,7 +2079,10 @@ function initialize() {
             requirementState.validation.status ===
               "PENDING_REVIEW"
           ) {
-            goToStep(3);
+            goToStep(
+              3,
+              "#validation-heading"
+            );
             return;
           }
 
@@ -2072,7 +2091,10 @@ function initialize() {
             requirementState.validation.status ===
               "VALIDATED"
           ) {
-            goToStep(4);
+            goToStep(
+              4,
+              "#brd-content"
+            );
           }
         }
       );
@@ -2081,7 +2103,7 @@ function initialize() {
 
   updateCharacterCount();
 
-  goToStep(1);
+  goToStep(1, "#step-1");
 }
 
 document.addEventListener(
