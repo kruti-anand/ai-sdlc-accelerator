@@ -681,10 +681,8 @@ function applyAnswerToState(
 
   switch (key) {
     case "objective":
-      requirementState.objective = clean.replace(
-        /[.!?]+$/,
-        ""
-      );
+      requirementState.objective =
+        clean.replace(/[.!?]+$/, "");
 
       addKnownFact(
         clean,
@@ -877,6 +875,9 @@ function renderInterview() {
   const tbdButton =
     $("#tbd-btn");
 
+  const reviewButton =
+    $("#review-requirement-btn");
+
   if (question) {
     if (questionElement) {
       questionElement.textContent =
@@ -900,10 +901,15 @@ function renderInterview() {
 
     if (tbdButton) {
       tbdButton.hidden = false;
+      tbdButton.disabled = false;
     }
 
     if (readyMessage) {
       readyMessage.hidden = true;
+    }
+
+    if (reviewButton) {
+      reviewButton.hidden = true;
     }
 
     focusElement("#current-answer");
@@ -918,20 +924,52 @@ function renderInterview() {
         "Review the requirement before approving it for BRD generation.";
     }
 
+    /*
+     * Interview is complete.
+     * Disable the answer controls because there is
+     * nothing left to answer.
+     */
     if (continueButton) {
       continueButton.hidden = true;
+      continueButton.disabled = true;
     }
 
     if (tbdButton) {
       tbdButton.hidden = true;
-    }
-
-    if (readyMessage) {
-      readyMessage.hidden = false;
+      tbdButton.disabled = true;
     }
 
     if (answerInput) {
       answerInput.disabled = true;
+      answerInput.value = "";
+    }
+
+    /*
+     * Show an explicit next action.
+     */
+    if (readyMessage) {
+      readyMessage.hidden = false;
+
+      readyMessage.innerHTML = `
+        <strong>Requirement is ready for validation.</strong>
+
+        <p>
+          The copilot has enough information for you to
+          review the requirement before a BRD is generated.
+        </p>
+
+        <p class="ready-next-step">
+          <strong>Next step:</strong>
+          Review and confirm the requirement.
+        </p>
+      `;
+    }
+
+    if (reviewButton) {
+      reviewButton.hidden = false;
+      reviewButton.disabled = false;
+      reviewButton.textContent =
+        "Review Requirement →";
     }
   }
 
@@ -1560,7 +1598,10 @@ function generateBRD() {
       "Traceability: BRD requirements are generated from the human-validated Requirement State.";
   }
 
-  goToStep(4, "#brd-content");
+  goToStep(
+    4,
+    "#step-4"
+  );
 }
 
 /* =========================================================
@@ -1657,10 +1698,6 @@ function handleAnalyze() {
       renderUnderstanding();
       renderInterview();
 
-      /*
-       * Move directly to the interview.
-       * Do not send the user back to the top of the page.
-       */
       goToStep(
         2,
         "#step-2"
@@ -1717,12 +1754,6 @@ function handleContinue() {
         requirementState.interview.status ===
         "READY_FOR_VALIDATION"
       ) {
-        renderValidation();
-
-        /*
-         * Keep the user at the end of the interview
-         * and show the review action.
-         */
         scrollToElement(
           "#ready-message"
         );
@@ -1761,8 +1792,6 @@ function handleTBD() {
         requirementState.interview.status ===
         "READY_FOR_VALIDATION"
       ) {
-        renderValidation();
-
         scrollToElement(
           "#ready-message"
         );
@@ -1802,17 +1831,13 @@ function handleReview() {
   renderValidation();
 
   /*
-   * Move directly to the validation heading.
-   * The user should immediately see:
-   * "Does this reflect what you need?"
+   * Scroll to the BEGINNING of Step 3.
+   * Do not use #validation-heading because it
+   * may sit farther down inside the panel.
    */
   goToStep(
     3,
-    "#validation-heading"
-  );
-
-  focusElement(
-    "#validation-heading"
+    "#step-3"
   );
 }
 
@@ -1867,10 +1892,6 @@ function handleApprove() {
     return;
   }
 
-  /*
-   * Explicit human action is the only path
-   * to VALIDATED.
-   */
   state.validation.status =
     "VALIDATED";
 
@@ -2047,10 +2068,6 @@ function initialize() {
     handleAnswerKeydown
   );
 
-  /*
-   * Progress navigation is intentionally restricted.
-   * Users should not be able to bypass the validation gate.
-   */
   $$(".progress-step").forEach(
     (step) => {
       step.addEventListener(
@@ -2062,7 +2079,10 @@ function initialize() {
             );
 
           if (target === 1) {
-            goToStep(1, "#step-1");
+            goToStep(
+              1,
+              "#step-1"
+            );
             return;
           }
 
@@ -2070,7 +2090,10 @@ function initialize() {
             target === 2 &&
             requirementState.originalRequest
           ) {
-            goToStep(2, "#step-2");
+            goToStep(
+              2,
+              "#step-2"
+            );
             return;
           }
 
@@ -2081,7 +2104,7 @@ function initialize() {
           ) {
             goToStep(
               3,
-              "#validation-heading"
+              "#step-3"
             );
             return;
           }
@@ -2093,7 +2116,7 @@ function initialize() {
           ) {
             goToStep(
               4,
-              "#brd-content"
+              "#step-4"
             );
           }
         }
@@ -2103,7 +2126,10 @@ function initialize() {
 
   updateCharacterCount();
 
-  goToStep(1, "#step-1");
+  goToStep(
+    1,
+    "#step-1"
+  );
 }
 
 document.addEventListener(
