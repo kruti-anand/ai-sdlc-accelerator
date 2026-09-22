@@ -1,29 +1,31 @@
-// AI SDLC Accelerator
-// Human-in-the-loop requirements engineering showcase
+// ============================================================
+// AI SDLC ACCELERATOR
+// Showcase application logic
+// ============================================================
 
-"use strict";
+document.addEventListener("DOMContentLoaded", () => {
+  // ----------------------------------------------------------
+  // Helpers
+  // ----------------------------------------------------------
 
-/* =========================================================
-   DOM HELPERS
-   ========================================================= */
+  const $ = (id) => document.getElementById(id);
 
-const $ = (selector) => document.querySelector(selector);
-const $$ = (selector) => document.querySelectorAll(selector);
+  const escapeHtml = (value) => {
+    if (value === null || value === undefined) return "";
 
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
 
-/* =========================================================
-   APPLICATION STATE
-   ========================================================= */
+  // ----------------------------------------------------------
+  // Application state
+  // ----------------------------------------------------------
 
-const interviewState = {
+  const interviewState = {
     originalRequirement: "",
     status: "IDLE",
 
@@ -34,833 +36,846 @@ const interviewState = {
     answers: [],
 
     clarified: {
-        objective: false,
-        users: false,
-        scope: false,
-        requirements: false,
-        businessRules: false,
-        constraints: false,
-        dependencies: false,
-        successCriteria: false
+      objective: true,
+      users: false,
+      scope: false,
+      requirements: false,
+      businessRules: false,
+      constraints: false,
+      dependencies: false,
+      successCriteria: false
     },
 
     state: {
-        objective: "",
-        users: "",
-        scope: "",
-        requirements: [],
-        businessRules: "",
-        constraints: "",
-        dependencies: "",
-        successCriteria: "",
-        assumptions: []
+      objective: "",
+      users: "",
+      scope: "",
+      requirements: [],
+      businessRules: "",
+      constraints: "",
+      dependencies: "",
+      successCriteria: "",
+      assumptions: []
     },
 
     brd: null
-};
+  };
 
-/* =========================================================
-   STEP NAVIGATION
-   ========================================================= */
+  // ----------------------------------------------------------
+  // Navigation
+  // ----------------------------------------------------------
 
-function goToStep(step, focusSelector = null) {
-    $$(".step-panel").forEach((panel) => {
-        const panelStep = Number(panel.dataset.step);
-        panel.hidden = panelStep !== step;
+  function goToStep(stepNumber) {
+    const panels = document.querySelectorAll(".step-panel");
+
+    panels.forEach((panel) => {
+      const panelStep = Number(panel.dataset.step);
+
+      if (panelStep === stepNumber) {
+        panel.removeAttribute("hidden");
+      } else {
+        panel.setAttribute("hidden", "");
+      }
     });
 
-    $$(".progress-step").forEach((item) => {
-        const itemStep = Number(item.dataset.step);
+    const progressSteps = document.querySelectorAll(".progress-step");
 
-        item.classList.toggle("active", itemStep === step);
-        item.classList.toggle("completed", itemStep < step);
+    progressSteps.forEach((step) => {
+      const stepNumberValue = Number(step.dataset.step);
+
+      step.classList.toggle(
+        "active",
+        stepNumberValue === stepNumber
+      );
+
+      step.classList.toggle(
+        "completed",
+        stepNumberValue < stepNumber
+      );
     });
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
+    const target = document.querySelector(
+      `.step-panel[data-step="${stepNumber}"]`
+    );
+
+    if (target) {
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+  }
+
+  // ----------------------------------------------------------
+  // IMPORTANT:
+  // "Explore the accelerator" button
+  // ----------------------------------------------------------
+
+  const exploreButton = $("explore-btn");
+  const workflowSection = $("requirements-workflow");
+
+  if (exploreButton && workflowSection) {
+    exploreButton.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      workflowSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
     });
+  }
 
-    if (focusSelector) {
-        const element = $(focusSelector);
+  // ----------------------------------------------------------
+  // Requirement analysis
+  // ----------------------------------------------------------
 
-        if (element) {
-            setTimeout(() => {
-                element.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
-            }, 100);
-        }
-    }
-}
-
-/* =========================================================
-   REQUIREMENT ANALYSIS
-   ========================================================= */
-
-function analyzeRequirement() {
-    const input = $("#requirement");
-
-    if (!input) {
-        return;
-    }
-
-    const requirement = input.value.trim();
-
-    if (!requirement) {
-        showError("Please enter a requirement before continuing.");
-        return;
-    }
+  function analyzeRequirement() {
+    const requirementInput = $("requirement");
+    const requirement = requirementInput
+      ? requirementInput.value.trim()
+      : "";
 
     clearError();
+
+    if (!requirement) {
+      showError("Enter a requirement before starting the analysis.");
+      return;
+    }
+
     resetInterviewState();
 
     interviewState.originalRequirement = requirement;
     interviewState.status = "INTERVIEWING";
 
-    initializeRequirementState(requirement);
-
-    const firstQuestion = selectNextQuestion();
-
-    if (firstQuestion) {
-        setNextQuestion(firstQuestion);
-    }
-
-    goToStep(2, "#step-2");
-    renderInterview();
-}
-
-/* =========================================================
-   INITIAL REQUIREMENT STATE
-   ========================================================= */
-
-function initializeRequirementState(requirement) {
     interviewState.state.objective = inferObjective(requirement);
 
-    if (interviewState.state.objective) {
-        interviewState.clarified.objective = true;
-    }
+    setNextQuestion();
 
-    const understanding = $("#understanding-content");
+    goToStep(2);
 
-    if (understanding) {
-        understanding.textContent =
-            "The initial request has been captured as the working objective. The copilot will now clarify the users, scope, behavior, rules, constraints, dependencies, and success criteria before validation.";
-    }
-}
+    renderAll();
+  }
 
-function inferObjective(text) {
-    return text ? text.trim() : "";
-}
+  function inferObjective(requirement) {
+    return requirement;
+  }
 
-/* =========================================================
-   CONTEXTUAL QUESTION ENGINE
-   ========================================================= */
+  // ----------------------------------------------------------
+  // Interview question selection
+  // ----------------------------------------------------------
 
-function selectNextQuestion() {
-    const clarified = interviewState.clarified;
+  function selectNextQuestion() {
+    const unansweredQuestions = [
+      {
+        key: "users",
+        question:
+          "Who are the primary users or stakeholders for this capability?",
+        why:
+          "Identifying the people affected by the change helps define the intended audience and downstream impacts."
+      },
+      {
+        key: "scope",
+        question:
+          "What should be included in the scope of this request, and is there anything explicitly out of scope?",
+        why:
+          "A clear scope boundary helps prevent requirements from expanding during delivery."
+      },
+      {
+        key: "requirements",
+        question:
+          "What are the key capabilities or behaviors the solution needs to provide?",
+        why:
+          "These become the core functional requirements that delivery teams can refine into implementation work."
+      },
+      {
+        key: "businessRules",
+        question:
+          "Are there business rules, policies, approvals, or decision criteria that the solution must follow?",
+        why:
+          "Business rules often affect design, workflow, testing, and acceptance criteria."
+      },
+      {
+        key: "constraints",
+        question:
+          "Are there technical, regulatory, security, timing, budget, or operational constraints we should capture?",
+        why:
+          "Constraints can materially change solution options and delivery planning."
+      },
+      {
+        key: "dependencies",
+        question:
+          "What systems, teams, data sources, integrations, or upstream/downstream dependencies could affect delivery?",
+        why:
+          "Dependencies are important for sequencing work and identifying delivery risks early."
+      },
+      {
+        key: "successCriteria",
+        question:
+          "How will we know this initiative is successful? What outcomes or measurable results should we expect?",
+        why:
+          "Success criteria connect delivery activity to the business outcome the requirement is intended to achieve."
+      }
+    ];
 
-    /*
-     * There is intentionally NO fixed question count.
-     *
-     * The interview continues until every meaningful
-     * discovery area has been addressed.
-     */
-
-    if (!clarified.users) {
-        return {
-            type: "users",
-            question:
-                "Who will use this capability, and are there any users or stakeholders who should be excluded?",
-            why:
-                "Understanding the affected users helps define the scope and prevents the requirement from being interpreted too broadly."
-        };
-    }
-
-    if (!clarified.scope) {
-        return {
-            type: "scope",
-            question:
-                "What should this change cover, and are there any areas or scenarios that should explicitly be excluded?",
-            why:
-                "Clear boundaries help engineering understand what is inside and outside the requested change."
-        };
-    }
-
-    if (!clarified.requirements) {
-        return {
-            type: "requirements",
-            question:
-                "What should the system or process actually do? Please describe the capability or behavior you expect.",
-            why:
-                "The business need needs to be translated into a concrete, testable requirement."
-        };
-    }
-
-    if (!clarified.businessRules) {
-        return {
-            type: "businessRules",
-            question:
-                "Are there any business rules, policies, approvals, or conditions that the solution must follow?",
-            why:
-                "Business rules can materially affect solution design and acceptance criteria."
-        };
-    }
-
-    if (!clarified.constraints) {
-        return {
-            type: "constraints",
-            question:
-                "Are there any constraints we should account for, such as timing, compliance, security, technology, budget, or operational limitations?",
-            why:
-                "Known constraints help engineering identify feasibility concerns early."
-        };
-    }
-
-    if (!clarified.dependencies) {
-        return {
-            type: "dependencies",
-            question:
-                "Does this depend on another application, team, process, data source, API, approval, or upstream/downstream change?",
-            why:
-                "Dependencies can affect sequencing, delivery planning, and risk."
-        };
-    }
-
-    if (!clarified.successCriteria) {
-        return {
-            type: "successCriteria",
-            question:
-                "How will you know this change is successful? What outcome or measurable result should we be able to verify?",
-            why:
-                "Success criteria provide a basis for validation and later testing."
-        };
+    for (const item of unansweredQuestions) {
+      if (!interviewState.clarified[item.key]) {
+        return item;
+      }
     }
 
     return null;
-}
+  }
 
-/* =========================================================
-   QUESTION MANAGEMENT
-   ========================================================= */
+  function setNextQuestion() {
+    const nextQuestion = selectNextQuestion();
 
-function setNextQuestion(question) {
-    interviewState.currentQuestion = question;
-    interviewState.questionNumber += 1;
-
-    interviewState.questionsAsked.push({
-        number: interviewState.questionNumber,
-        type: question.type,
-        question: question.question
-    });
-}
-
-function processAnswer(answer, markedTbd = false) {
-    if (!interviewState.currentQuestion) {
-        return;
+    if (!nextQuestion) {
+      finishInterview();
+      return;
     }
 
-    const question = interviewState.currentQuestion;
-    const cleanAnswer = answer.trim();
+    interviewState.currentQuestion = nextQuestion;
+    interviewState.questionNumber += 1;
 
-    if (!cleanAnswer && !markedTbd) {
-        showError("Please enter an answer or select “Mark as TBD”.");
-        return;
+    interviewState.questionsAsked.push(nextQuestion);
+  }
+
+  // ----------------------------------------------------------
+  // Process interview answer
+  // ----------------------------------------------------------
+
+  function processAnswer(markAsTbd = false) {
+    const answerInput = $("current-answer");
+
+    if (!answerInput) {
+      return;
+    }
+
+    const answer = answerInput.value.trim();
+
+    if (!markAsTbd && !answer) {
+      showError("Enter an answer or select “Mark as TBD.”");
+      return;
     }
 
     clearError();
 
-    const finalAnswer = markedTbd ? "TBD" : cleanAnswer;
+    const currentQuestion = interviewState.currentQuestion;
+
+    if (!currentQuestion) {
+      return;
+    }
+
+    const finalAnswer = markAsTbd
+      ? "TBD — requires human validation."
+      : answer;
 
     interviewState.answers.push({
-        number: interviewState.questionNumber,
-        type: question.type,
-        question: question.question,
-        answer: finalAnswer
+      key: currentQuestion.key,
+      question: currentQuestion.question,
+      answer: finalAnswer,
+      isTbd: markAsTbd
     });
 
     updateRequirementState(
-        question.type,
-        finalAnswer,
-        markedTbd
+      currentQuestion.key,
+      finalAnswer,
+      markAsTbd
     );
 
     interviewState.currentQuestion = null;
 
-    /*
-     * FIRST determine whether another meaningful question exists.
-     *
-     * ONLY when there is no next question do we complete
-     * the interview.
-     */
+    // --------------------------------------------------------
+    // This is the critical logic:
+    //
+    // We ALWAYS look for another meaningful contextual question
+    // before declaring the requirement ready.
+    //
+    // There is NO "after 3 questions" shortcut.
+    // --------------------------------------------------------
 
     const nextQuestion = selectNextQuestion();
 
     if (nextQuestion) {
-        setNextQuestion(nextQuestion);
-        interviewState.status = "INTERVIEWING";
-        renderInterview();
-        return;
+      interviewState.currentQuestion = nextQuestion;
+      interviewState.questionNumber += 1;
+      interviewState.questionsAsked.push(nextQuestion);
+
+      renderAll();
+      return;
     }
 
     finishInterview();
-}
+  }
 
-/* =========================================================
-   UPDATE REQUIREMENT STATE
-   ========================================================= */
+  // ----------------------------------------------------------
+  // Update planning state
+  // ----------------------------------------------------------
 
-function updateRequirementState(type, answer, markedTbd) {
-    switch (type) {
-        case "users":
-            interviewState.state.users = answer;
-            interviewState.clarified.users = true;
-            break;
+  function updateRequirementState(key, answer, isTbd) {
+    interviewState.clarified[key] = true;
 
-        case "scope":
-            interviewState.state.scope = answer;
-            interviewState.clarified.scope = true;
-            break;
-
-        case "requirements":
-            interviewState.state.requirements = markedTbd
-                ? ["TBD"]
-                : [answer];
-
-            interviewState.clarified.requirements = true;
-            break;
-
-        case "businessRules":
-            interviewState.state.businessRules = answer;
-            interviewState.clarified.businessRules = true;
-            break;
-
-        case "constraints":
-            interviewState.state.constraints = answer;
-            interviewState.clarified.constraints = true;
-            break;
-
-        case "dependencies":
-            interviewState.state.dependencies = answer;
-            interviewState.clarified.dependencies = true;
-            break;
-
-        case "successCriteria":
-            interviewState.state.successCriteria = answer;
-            interviewState.clarified.successCriteria = true;
-            break;
-    }
-}
-
-/* =========================================================
-   INTERVIEW COMPLETION
-   ========================================================= */
-
-function isReadyForValidation() {
-    const state = interviewState.state;
-
-    return Boolean(
-        state.objective &&
-        state.objective.trim() &&
-        state.scope &&
-        state.scope.trim() &&
-        Array.isArray(state.requirements) &&
-        state.requirements.length > 0
-    );
-}
-
-function finishInterview() {
-    /*
-     * This function is reached only after the question engine
-     * has no meaningful question remaining.
-     */
-
-    if (isReadyForValidation()) {
-        interviewState.status = "READY_FOR_VALIDATION";
-        interviewState.currentQuestion = null;
-    } else {
-        /*
-         * Safety fallback.
-         *
-         * This should not normally occur because the question
-         * engine collects the required fields.
-         */
-        interviewState.status = "INTERVIEWING";
-
-        interviewState.currentQuestion = {
-            type: "requirements",
-            question:
-                "Is there anything else the requirement must do or achieve that we have not captured?",
-            why:
-                "A final clarification helps ensure the requirement is complete before validation."
-        };
-
-        interviewState.questionNumber += 1;
+    if (key === "users") {
+      interviewState.state.users = answer;
     }
 
+    if (key === "scope") {
+      interviewState.state.scope = answer;
+    }
+
+    if (key === "requirements") {
+      interviewState.state.requirements = [
+        answer
+      ];
+    }
+
+    if (key === "businessRules") {
+      interviewState.state.businessRules = answer;
+    }
+
+    if (key === "constraints") {
+      interviewState.state.constraints = answer;
+    }
+
+    if (key === "dependencies") {
+      interviewState.state.dependencies = answer;
+    }
+
+    if (key === "successCriteria") {
+      interviewState.state.successCriteria = answer;
+    }
+
+    if (isTbd) {
+      interviewState.state.assumptions.push(
+        `${key}: requires human validation.`
+      );
+    }
+  }
+
+  // ----------------------------------------------------------
+  // Finish interview
+  // ----------------------------------------------------------
+
+  function finishInterview() {
+    const ready = isReadyForValidation();
+
+    if (!ready) {
+      return;
+    }
+
+    interviewState.status = "READY_FOR_VALIDATION";
+    interviewState.currentQuestion = null;
+
+    renderAll();
+  }
+
+  function isReadyForValidation() {
+    const requiredFields = [
+      "objective",
+      "users",
+      "scope",
+      "requirements",
+      "businessRules",
+      "constraints",
+      "dependencies",
+      "successCriteria"
+    ];
+
+    return requiredFields.every((field) => {
+      const value = interviewState.state[field];
+
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+
+      return Boolean(value && String(value).trim());
+    });
+  }
+
+  // ----------------------------------------------------------
+  // Rendering
+  // ----------------------------------------------------------
+
+  function renderAll() {
+    renderUnderstanding();
     renderInterview();
-}
+    renderInterviewHistory();
+    renderRequirementState();
+    renderValidation();
+  }
 
-/* =========================================================
-   INTERVIEW RENDERING
-   ========================================================= */
+  function renderUnderstanding() {
+    const container = $("understanding-content");
 
-function renderInterview() {
-    const question = interviewState.currentQuestion;
-
-    const currentQuestion = $("#current-question");
-    const questionNumber = $("#question-number");
-    const questionWhy = $("#question-why");
-
-    const answerInput = $("#current-answer");
-    const answerArea = $("#answer-area");
-    const questionState = $("#question-state");
-
-    const completionState = $("#completion-state");
-
-    const continueButton = $("#continue-btn");
-    const tbdButton = $("#tbd-btn");
-
-    const reviewButton = $("#review-requirement-btn");
-
-    const interviewStatus = $("#interview-status");
-
-    if (!currentQuestion) {
-        return;
+    if (!container) {
+      return;
     }
 
-    /* =====================================================
-       COMPLETED STATE
-       ===================================================== */
+    if (!interviewState.originalRequirement) {
+      container.innerHTML = "";
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="understanding-item">
+        <span class="understanding-label">Original intent</span>
+        <p>${escapeHtml(interviewState.originalRequirement)}</p>
+      </div>
+
+      <div class="understanding-item">
+        <span class="understanding-label">Working objective</span>
+        <p>${escapeHtml(interviewState.state.objective)}</p>
+      </div>
+    `;
+  }
+
+  function renderInterview() {
+    const status = $("interview-status");
+    const questionState = $("question-state");
+    const question = $("current-question");
+    const questionWhy = $("question-why");
+    const answerArea = $("answer-area");
+    const answerInput = $("current-answer");
+    const tbdButton = $("tbd-btn");
+    const continueButton = $("continue-btn");
+
+    const completionState = $("completion-state");
+    const reviewButton = $("review-requirement-btn");
+
+    if (status) {
+      if (interviewState.status === "INTERVIEWING") {
+        status.textContent = "Contextual discovery in progress";
+      } else if (
+        interviewState.status === "READY_FOR_VALIDATION"
+      ) {
+        status.textContent = "Ready for human validation";
+      } else {
+        status.textContent = "";
+      }
+    }
+
+    if (interviewState.status === "INTERVIEWING") {
+      if (questionState) {
+        questionState.removeAttribute("hidden");
+        questionState.textContent =
+          `Question ${interviewState.questionNumber}`;
+      }
+
+      if (question) {
+        question.removeAttribute("hidden");
+        question.textContent =
+          interviewState.currentQuestion
+            ? interviewState.currentQuestion.question
+            : "";
+      }
+
+      if (questionWhy) {
+        questionWhy.removeAttribute("hidden");
+
+        questionWhy.textContent =
+          interviewState.currentQuestion
+            ? interviewState.currentQuestion.why
+            : "";
+      }
+
+      if (answerArea) {
+        answerArea.removeAttribute("hidden");
+      }
+
+      if (answerInput) {
+        answerInput.value = "";
+        answerInput.focus();
+      }
+
+      if (tbdButton) {
+        tbdButton.removeAttribute("hidden");
+      }
+
+      if (continueButton) {
+        continueButton.removeAttribute("hidden");
+      }
+
+      if (completionState) {
+        completionState.setAttribute("hidden", "");
+      }
+
+      if (reviewButton) {
+        reviewButton.setAttribute("hidden", "");
+      }
+
+      return;
+    }
 
     if (interviewState.status === "READY_FOR_VALIDATION") {
-        if (interviewStatus) {
-            interviewStatus.innerHTML =
-                '<span class="status-dot"></span> Complete';
-        }
+      if (questionState) {
+        questionState.setAttribute("hidden", "");
+      }
 
-        if (questionState) {
-            questionState.hidden = true;
-        }
+      if (question) {
+        question.setAttribute("hidden", "");
+      }
 
-        if (answerArea) {
-            answerArea.hidden = true;
-        }
+      if (questionWhy) {
+        questionWhy.setAttribute("hidden", "");
+      }
 
-        if (completionState) {
-            completionState.hidden = false;
-        }
+      if (answerArea) {
+        answerArea.setAttribute("hidden", "");
+      }
 
-        if (answerInput) {
-            answerInput.value = "";
-            answerInput.disabled = true;
-        }
+      if (tbdButton) {
+        tbdButton.setAttribute("hidden", "");
+      }
 
-        if (continueButton) {
-            continueButton.hidden = true;
-        }
+      if (continueButton) {
+        continueButton.setAttribute("hidden", "");
+      }
 
-        if (tbdButton) {
-            tbdButton.hidden = true;
-        }
+      if (completionState) {
+        completionState.removeAttribute("hidden");
+      }
 
-        if (reviewButton) {
-            reviewButton.hidden = false;
-        }
+      if (reviewButton) {
+        reviewButton.removeAttribute("hidden");
+      }
 
-        renderInterviewHistory();
-        renderRequirementState();
-
-        return;
+      return;
     }
 
-    /* =====================================================
-       ACTIVE INTERVIEW STATE
-       ===================================================== */
-
-    if (!question) {
-        return;
-    }
-
-    if (interviewStatus) {
-        interviewStatus.innerHTML =
-            '<span class="status-dot"></span> Interviewing';
-    }
+    // Default / initial state
 
     if (questionState) {
-        questionState.hidden = false;
+      questionState.setAttribute("hidden", "");
+    }
+
+    if (question) {
+      question.setAttribute("hidden", "");
+    }
+
+    if (questionWhy) {
+      questionWhy.setAttribute("hidden", "");
     }
 
     if (answerArea) {
-        answerArea.hidden = false;
-    }
-
-    if (completionState) {
-        completionState.hidden = true;
-    }
-
-    if (questionNumber) {
-        questionNumber.textContent =
-            `QUESTION ${String(
-                interviewState.questionNumber
-            ).padStart(2, "0")}`;
-    }
-
-    currentQuestion.textContent = question.question;
-
-    if (questionWhy) {
-        questionWhy.textContent = question.why;
-    }
-
-    if (answerInput) {
-        answerInput.disabled = false;
-        answerInput.value = "";
-        answerInput.placeholder =
-            "Enter your answer...";
-    }
-
-    if (continueButton) {
-        continueButton.hidden = false;
+      answerArea.setAttribute("hidden", "");
     }
 
     if (tbdButton) {
-        tbdButton.hidden = false;
+      tbdButton.setAttribute("hidden", "");
+    }
+
+    if (continueButton) {
+      continueButton.setAttribute("hidden", "");
+    }
+
+    if (completionState) {
+      completionState.setAttribute("hidden", "");
     }
 
     if (reviewButton) {
-        reviewButton.hidden = true;
+      reviewButton.setAttribute("hidden", "");
     }
+  }
 
-    renderInterviewHistory();
-    renderRequirementState();
-}
-
-/* =========================================================
-   INTERVIEW HISTORY
-   ========================================================= */
-
-function renderInterviewHistory() {
-    const container = $("#history-content");
+  function renderInterviewHistory() {
+    const container = $("interview-history");
 
     if (!container) {
-        return;
+      return;
     }
 
-    if (!interviewState.answers.length) {
-        container.innerHTML =
-            "<p>No questions answered yet.</p>";
-        return;
+    if (interviewState.answers.length === 0) {
+      container.innerHTML = "";
+      return;
     }
 
     container.innerHTML = interviewState.answers
-        .map((item) => {
-            return `
-                <div class="history-item">
-                    <div class="history-question">
-                        Q-${String(item.number).padStart(2, "0")}
-                    </div>
+      .map((item, index) => {
+        return `
+          <div class="history-item">
+            <div class="history-number">${index + 1}</div>
 
-                    <div class="history-question-text">
-                        ${escapeHtml(item.question)}
-                    </div>
+            <div class="history-content">
+              <div class="history-question">
+                ${escapeHtml(item.question)}
+              </div>
 
-                    <div class="history-answer-label">
-                        YOUR ANSWER
-                    </div>
+              <div class="history-answer">
+                ${escapeHtml(item.answer)}
+              </div>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  }
 
-                    <div class="history-answer">
-                        ${escapeHtml(item.answer)}
-                    </div>
-                </div>
-            `;
-        })
-        .join("");
-}
-
-/* =========================================================
-   REQUIREMENT STATE DISPLAY
-   ========================================================= */
-
-function renderRequirementState() {
+  function renderRequirementState() {
     const state = interviewState.state;
 
     setText(
-        "#state-objective",
-        state.objective || "Not established yet"
+      "state-objective",
+      state.objective || "Not yet defined"
     );
 
     setText(
-        "#state-scope",
-        state.scope || "Not established yet"
+      "state-scope",
+      state.scope || "Not yet defined"
     );
 
     setText(
-        "#state-users",
-        state.users || "Not established yet"
+      "state-users",
+      state.users || "Not yet defined"
     );
 
     setText(
-        "#state-constraints",
-        state.constraints || "Not established yet"
+      "state-constraints",
+      state.constraints || "Not yet defined"
     );
 
     setText(
-        "#state-dependencies",
-        state.dependencies || "Not established yet"
+      "state-dependencies",
+      state.dependencies || "Not yet defined"
     );
 
     setText(
-        "#state-success",
-        state.successCriteria || "Not established yet"
+      "state-success",
+      state.successCriteria || "Not yet defined"
     );
 
-    const requirementCount =
-        Array.isArray(state.requirements)
-            ? state.requirements.length
-            : 0;
-
-    setText(
-        "#metric-known",
-        countKnownFields()
-    );
-
-    setText(
-        "#metric-requirements",
-        requirementCount
-    );
-
-    setText(
-        "#metric-open",
-        countOpenQuestions()
-    );
-}
-
-function countKnownFields() {
-    let count = 0;
-
-    if (interviewState.state.objective) count++;
-    if (interviewState.state.users) count++;
-    if (interviewState.state.scope) count++;
-    if (interviewState.state.requirements.length) count++;
-    if (interviewState.state.businessRules) count++;
-    if (interviewState.state.constraints) count++;
-    if (interviewState.state.dependencies) count++;
-    if (interviewState.state.successCriteria) count++;
-
-    return count;
-}
-
-function countOpenQuestions() {
-    return Object.values(interviewState.clarified)
-        .filter((value) => !value)
-        .length;
-}
-
-function setText(selector, value) {
-    const element = $(selector);
-
-    if (element) {
-        element.textContent = value;
-    }
-}
-
-/* =========================================================
-   VALIDATION
-   ========================================================= */
-
-function renderValidation() {
-    const state = interviewState.state;
-
-    setText(
-        "#validation-objective",
-        state.objective || "Not provided"
-    );
-
-    setText(
-        "#validation-scope",
-        state.scope || "Not provided"
-    );
-
-    setText(
-        "#validation-dependencies",
-        state.dependencies || "TBD / None identified"
-    );
-
-    setText(
-        "#validation-assumptions",
-        state.assumptions.length
-            ? state.assumptions.join("; ")
-            : "None identified"
-    );
-
-    const requirementsElement =
-        $("#validation-requirements");
+    const requirementsElement = $("state-requirements");
 
     if (requirementsElement) {
-        requirementsElement.innerHTML =
-            state.requirements.length
-                ? state.requirements
-                    .map(
-                        (requirement) =>
-                            `<li>${escapeHtml(requirement)}</li>`
-                    )
-                    .join("")
-                : "<li>No requirements captured</li>";
+      requirementsElement.textContent =
+        state.requirements.length > 0
+          ? state.requirements.join(", ")
+          : "Not yet defined";
     }
 
-    const successElement =
-        $("#validation-success");
+    updateMetrics();
+  }
 
-    if (successElement) {
-        successElement.textContent =
-            state.successCriteria || "Not provided";
-    }
-}
+  function updateMetrics() {
+    const fields = [
+      interviewState.state.objective,
+      interviewState.state.users,
+      interviewState.state.scope,
+      interviewState.state.requirements.length > 0,
+      interviewState.state.businessRules,
+      interviewState.state.constraints,
+      interviewState.state.dependencies,
+      interviewState.state.successCriteria
+    ];
 
-/* =========================================================
-   BRD GENERATION
-   ========================================================= */
+    const known = fields.filter(Boolean).length;
+    const total = fields.length;
+    const open = total - known;
 
-function generateBRD() {
+    setText("metric-known", `${known}/${total}`);
+    setText("metric-requirements", `${interviewState.answers.length}`);
+    setText("metric-open", `${open}`);
+  }
+
+  function renderValidation() {
     const state = interviewState.state;
 
-    const requirements =
-        state.requirements.length
-            ? state.requirements
-                .map(
-                    (item, index) =>
-                        `${index + 1}. ${item}`
-                )
-                .join("\n")
-            : "No requirements captured.";
+    setText(
+      "validation-objective",
+      state.objective || "Not yet defined"
+    );
 
-    const brd = `
-BUSINESS REQUIREMENTS DOCUMENT
+    setText(
+      "validation-requirements",
+      state.requirements.length > 0
+        ? state.requirements.join(", ")
+        : "Not yet defined"
+    );
 
-1. OBJECTIVE
-${state.objective || "TBD"}
+    setText(
+      "validation-scope",
+      state.scope || "Not yet defined"
+    );
 
-2. USERS & STAKEHOLDERS
-${state.users || "TBD"}
+    setText(
+      "validation-dependencies",
+      state.dependencies || "Not yet defined"
+    );
 
-3. SCOPE
-${state.scope || "TBD"}
+    setText(
+      "validation-assumptions",
+      state.assumptions.length > 0
+        ? state.assumptions.join(" ")
+        : "No additional assumptions recorded."
+    );
 
-4. BUSINESS REQUIREMENTS
-${requirements}
+    setText(
+      "validation-success",
+      state.successCriteria || "Not yet defined"
+    );
 
-5. BUSINESS RULES
-${state.businessRules || "TBD"}
+    if (interviewState.status === "READY_FOR_VALIDATION") {
+      setText(
+        "validation-status",
+        "Review the clarified requirement before approving the BRD."
+      );
+    }
+  }
 
-6. CONSTRAINTS
-${state.constraints || "TBD"}
+  // ----------------------------------------------------------
+  // BRD generation
+  // ----------------------------------------------------------
 
-7. DEPENDENCIES
-${state.dependencies || "TBD"}
+  function generateBRD() {
+    const state = interviewState.state;
 
-8. SUCCESS CRITERIA
-${state.successCriteria || "TBD"}
+    interviewState.brd = {
+      title: "Business Requirements Document",
+      objective: state.objective,
+      users: state.users,
+      requirements: state.requirements,
+      scope: state.scope,
+      businessRules: state.businessRules,
+      constraints: state.constraints,
+      dependencies: state.dependencies,
+      assumptions: state.assumptions,
+      successCriteria: state.successCriteria
+    };
 
-9. ASSUMPTIONS
-${
-    state.assumptions.length
-        ? state.assumptions.join("\n")
-        : "None identified"
-}
+    const container = $("brd-content");
 
-10. TRACEABILITY
-Source requirement:
-${interviewState.originalRequirement}
-
-This BRD was generated from the structured requirement
-captured through the AI SDLC Accelerator's human-in-the-loop
-requirements interview.
-`.trim();
-
-    interviewState.brd = brd;
-
-    const container = $("#brd-content");
-
-    if (container) {
-        container.textContent = brd;
+    if (!container) {
+      return;
     }
 
-    const banner = $("#traceability-banner");
+    container.innerHTML = `
+      <div class="brd-section">
+        <h3>1. Objective</h3>
+        <p>${escapeHtml(state.objective)}</p>
+      </div>
 
-    if (banner) {
-        banner.hidden = false;
-    }
-}
+      <div class="brd-section">
+        <h3>2. Primary Users / Stakeholders</h3>
+        <p>${escapeHtml(state.users)}</p>
+      </div>
 
-/* =========================================================
-   BUTTON ACTIONS
-   ========================================================= */
+      <div class="brd-section">
+        <h3>3. Requirements</h3>
+        <ul>
+          ${state.requirements
+            .map(
+              (item) =>
+                `<li>${escapeHtml(item)}</li>`
+            )
+            .join("")}
+        </ul>
+      </div>
 
-function continueInterview() {
-    const answerInput = $("#current-answer");
+      <div class="brd-section">
+        <h3>4. Scope</h3>
+        <p>${escapeHtml(state.scope)}</p>
+      </div>
 
-    if (!answerInput) {
-        return;
-    }
+      <div class="brd-section">
+        <h3>5. Business Rules</h3>
+        <p>${escapeHtml(state.businessRules)}</p>
+      </div>
 
-    processAnswer(answerInput.value, false);
-}
+      <div class="brd-section">
+        <h3>6. Constraints</h3>
+        <p>${escapeHtml(state.constraints)}</p>
+      </div>
 
-function markTbd() {
-    processAnswer("TBD", true);
-}
+      <div class="brd-section">
+        <h3>7. Dependencies</h3>
+        <p>${escapeHtml(state.dependencies)}</p>
+      </div>
 
-function reviewRequirement() {
+      <div class="brd-section">
+        <h3>8. Assumptions / TBD Items</h3>
+        <p>
+          ${
+            state.assumptions.length > 0
+              ? escapeHtml(state.assumptions.join(" "))
+              : "None recorded."
+          }
+        </p>
+      </div>
+
+      <div class="brd-section">
+        <h3>9. Success Criteria</h3>
+        <p>${escapeHtml(state.successCriteria)}</p>
+      </div>
+    `;
+  }
+
+  // ----------------------------------------------------------
+  // Human validation
+  // ----------------------------------------------------------
+
+  function reviewRequirement() {
     if (
-        interviewState.status !==
-        "READY_FOR_VALIDATION"
+      interviewState.status !== "READY_FOR_VALIDATION"
     ) {
-        return;
+      return;
     }
 
+    goToStep(3);
     renderValidation();
-    goToStep(3, "#step-3");
-}
+  }
 
-function approveRequirement() {
-    renderValidation();
+  function approveRequirement() {
     generateBRD();
-    goToStep(4, "#step-4");
-}
 
-function backToRequirement() {
-    goToStep(1, "#step-1");
-}
+    goToStep(4);
+  }
 
-function continueFromValidation() {
-    goToStep(2, "#step-2");
-}
+  function continueInterview() {
+    goToStep(2);
+    renderInterview();
+  }
 
-/* =========================================================
-   RESTART
-   ========================================================= */
+  function backToRequirement() {
+    goToStep(1);
+  }
 
-function restart() {
+  // ----------------------------------------------------------
+  // Sample requirement
+  // ----------------------------------------------------------
+
+  function loadSampleRequirement() {
+    const requirementInput = $("requirement");
+
+    if (!requirementInput) {
+      return;
+    }
+
+    requirementInput.value =
+      "Create a centralized intake process that allows business teams to submit technology requests and gives delivery teams a consistent way to assess, prioritize, and prepare those requests for execution.";
+
+    updateCharacterCount();
+    clearError();
+  }
+
+  // ----------------------------------------------------------
+  // Restart
+  // ----------------------------------------------------------
+
+  function restart() {
     resetInterviewState();
 
-    const input = $("#requirement");
+    const requirementInput = $("requirement");
 
-    if (input) {
-        input.value = "";
+    if (requirementInput) {
+      requirementInput.value = "";
     }
 
     updateCharacterCount();
     clearError();
 
-    goToStep(1, "#step-1");
-}
+    goToStep(1);
+  }
 
-/* =========================================================
-   RESET
-   ========================================================= */
-
-function resetInterviewState() {
+  function resetInterviewState() {
     interviewState.originalRequirement = "";
     interviewState.status = "IDLE";
 
@@ -871,295 +886,259 @@ function resetInterviewState() {
     interviewState.answers = [];
 
     interviewState.clarified = {
-        objective: false,
-        users: false,
-        scope: false,
-        requirements: false,
-        businessRules: false,
-        constraints: false,
-        dependencies: false,
-        successCriteria: false
+      objective: true,
+      users: false,
+      scope: false,
+      requirements: false,
+      businessRules: false,
+      constraints: false,
+      dependencies: false,
+      successCriteria: false
     };
 
     interviewState.state = {
-        objective: "",
-        users: "",
-        scope: "",
-        requirements: [],
-        businessRules: "",
-        constraints: "",
-        dependencies: "",
-        successCriteria: "",
-        assumptions: []
+      objective: "",
+      users: "",
+      scope: "",
+      requirements: [],
+      businessRules: "",
+      constraints: "",
+      dependencies: "",
+      successCriteria: "",
+      assumptions: []
     };
 
     interviewState.brd = null;
 
-    const completionState = $("#completion-state");
+    renderAll();
+  }
 
-    if (completionState) {
-        completionState.hidden = true;
+  // ----------------------------------------------------------
+  // Copy BRD
+  // ----------------------------------------------------------
+
+  async function copyBRD() {
+    if (!interviewState.brd) {
+      return;
     }
 
-    const questionState = $("#question-state");
+    const state = interviewState.brd;
 
-    if (questionState) {
-        questionState.hidden = false;
-    }
+    const text = `
+BUSINESS REQUIREMENTS DOCUMENT
 
-    const answerArea = $("#answer-area");
+OBJECTIVE
+${state.objective}
 
-    if (answerArea) {
-        answerArea.hidden = false;
-    }
+PRIMARY USERS / STAKEHOLDERS
+${state.users}
 
-    const reviewButton = $("#review-requirement-btn");
+REQUIREMENTS
+${state.requirements.join("\n")}
 
-    if (reviewButton) {
-        reviewButton.hidden = true;
-    }
+SCOPE
+${state.scope}
 
-    const traceabilityBanner =
-        $("#traceability-banner");
+BUSINESS RULES
+${state.businessRules}
 
-    if (traceabilityBanner) {
-        traceabilityBanner.hidden = true;
-    }
+CONSTRAINTS
+${state.constraints}
 
-    const brdContent = $("#brd-content");
+DEPENDENCIES
+${state.dependencies}
 
-    if (brdContent) {
-        brdContent.textContent = "";
-    }
-
-    const historyContent = $("#history-content");
-
-    if (historyContent) {
-        historyContent.innerHTML =
-            "<p>No questions answered yet.</p>";
-    }
+ASSUMPTIONS / TBD ITEMS
+${
+  state.assumptions.length > 0
+    ? state.assumptions.join("\n")
+    : "None recorded."
 }
 
-/* =========================================================
-   SAMPLE REQUIREMENT
-   ========================================================= */
+SUCCESS CRITERIA
+${state.successCriteria}
+`.trim();
 
-function loadSampleRequirement() {
-    const input = $("#requirement");
+    try {
+      await navigator.clipboard.writeText(text);
 
-    if (!input) {
-        return;
+      const button = $("copy-brd-btn");
+
+      if (button) {
+        const originalText = button.textContent;
+
+        button.textContent = "Copied";
+
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Unable to copy BRD:", error);
     }
+  }
 
-    input.value =
-        "Allow customers with an active account to update their contact information through the online portal.";
+  // ----------------------------------------------------------
+  // Character count
+  // ----------------------------------------------------------
 
-    updateCharacterCount();
-    clearError();
-}
-
-/* =========================================================
-   CHARACTER COUNT
-   ========================================================= */
-
-function updateCharacterCount() {
-    const input = $("#requirement");
-    const counter = $("#character-count");
+  function updateCharacterCount() {
+    const input = $("requirement");
+    const counter = $("character-count");
 
     if (!input || !counter) {
-        return;
+      return;
     }
 
-    counter.textContent =
-        `${input.value.length} characters`;
-}
+    counter.textContent = `${input.value.length} characters`;
+  }
 
-/* =========================================================
-   ERROR HANDLING
-   ========================================================= */
+  // ----------------------------------------------------------
+  // Error handling
+  // ----------------------------------------------------------
 
-function showError(message) {
-    const errorElement = $("#error-message");
+  function showError(message) {
+    const errorElement = $("error-message");
 
     if (!errorElement) {
-        return;
+      return;
     }
 
     errorElement.textContent = message;
-    errorElement.hidden = false;
-}
+    errorElement.removeAttribute("hidden");
+  }
 
-function clearError() {
-    const errorElement = $("#error-message");
+  function clearError() {
+    const errorElement = $("error-message");
 
     if (!errorElement) {
-        return;
+      return;
     }
 
     errorElement.textContent = "";
-    errorElement.hidden = true;
-}
+    errorElement.setAttribute("hidden", "");
+  }
 
-/* =========================================================
-   COPY BRD
-   ========================================================= */
+  // ----------------------------------------------------------
+  // Small DOM helper
+  // ----------------------------------------------------------
 
-async function copyBRD() {
-    if (!interviewState.brd) {
-        return;
+  function setText(id, value) {
+    const element = $(id);
+
+    if (element) {
+      element.textContent = value;
     }
+  }
 
-    try {
-        await navigator.clipboard.writeText(
-            interviewState.brd
-        );
+  // ----------------------------------------------------------
+  // Event listeners
+  // ----------------------------------------------------------
 
-        const button = $("#copy-brd-btn");
+  const analyzeButton = $("analyze-btn");
 
-        if (button) {
-            const originalText = button.textContent;
+  if (analyzeButton) {
+    analyzeButton.addEventListener(
+      "click",
+      analyzeRequirement
+    );
+  }
 
-            button.textContent = "Copied!";
+  const sampleButton = $("sample-btn");
 
-            setTimeout(() => {
-                button.textContent = originalText;
-            }, 1500);
-        }
-    } catch (error) {
-        showError(
-            "The BRD could not be copied automatically. Please select and copy the text manually."
-        );
-    }
-}
+  if (sampleButton) {
+    sampleButton.addEventListener(
+      "click",
+      loadSampleRequirement
+    );
+  }
 
-/* =========================================================
-   HERO NAVIGATION
-   ========================================================= */
+  const continueButton = $("continue-btn");
 
-function exploreAccelerator() {
-    const target = $("#requirements-workflow");
+  if (continueButton) {
+    continueButton.addEventListener(
+      "click",
+      () => processAnswer(false)
+    );
+  }
 
-    if (target) {
-        target.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
-    }
-}
+  const tbdButton = $("tbd-btn");
 
-/* =========================================================
-   EVENT LISTENERS
-   ========================================================= */
+  if (tbdButton) {
+    tbdButton.addEventListener(
+      "click",
+      () => processAnswer(true)
+    );
+  }
 
-function initializeApp() {
-    const exploreButton = $("#explore-btn");
-    const analyzeButton = $("#analyze-btn");
-    const sampleButton = $("#sample-btn");
-    const continueButton = $("#continue-btn");
-    const tbdButton = $("#tbd-btn");
-    const reviewButton = $("#review-requirement-btn");
-    const approveButton = $("#approve-btn");
-    const copyButton = $("#copy-brd-btn");
-    const restartButton = $("#restart-btn");
-    const backButton = $("#back-to-requirement");
-    const continueValidationButton =
-        $("#continue-interview-btn");
-    const requirementInput = $("#requirement");
+  const reviewButton = $("review-requirement-btn");
 
-    if (exploreButton) {
-        exploreButton.addEventListener(
-            "click",
-            exploreAccelerator
-        );
-    }
+  if (reviewButton) {
+    reviewButton.addEventListener(
+      "click",
+      reviewRequirement
+    );
+  }
 
-    if (analyzeButton) {
-        analyzeButton.addEventListener(
-            "click",
-            analyzeRequirement
-        );
-    }
+  const continueInterviewButton =
+    $("continue-interview-btn");
 
-    if (sampleButton) {
-        sampleButton.addEventListener(
-            "click",
-            loadSampleRequirement
-        );
-    }
+  if (continueInterviewButton) {
+    continueInterviewButton.addEventListener(
+      "click",
+      continueInterview
+    );
+  }
 
-    if (continueButton) {
-        continueButton.addEventListener(
-            "click",
-            continueInterview
-        );
-    }
+  const approveButton = $("approve-btn");
 
-    if (tbdButton) {
-        tbdButton.addEventListener(
-            "click",
-            markTbd
-        );
-    }
+  if (approveButton) {
+    approveButton.addEventListener(
+      "click",
+      approveRequirement
+    );
+  }
 
-    if (reviewButton) {
-        reviewButton.addEventListener(
-            "click",
-            reviewRequirement
-        );
-    }
+  const backButton = $("back-to-requirement");
 
-    if (approveButton) {
-        approveButton.addEventListener(
-            "click",
-            approveRequirement
-        );
-    }
+  if (backButton) {
+    backButton.addEventListener(
+      "click",
+      backToRequirement
+    );
+  }
 
-    if (copyButton) {
-        copyButton.addEventListener(
-            "click",
-            copyBRD
-        );
-    }
+  const copyButton = $("copy-brd-btn");
 
-    if (restartButton) {
-        restartButton.addEventListener(
-            "click",
-            restart
-        );
-    }
+  if (copyButton) {
+    copyButton.addEventListener(
+      "click",
+      copyBRD
+    );
+  }
 
-    if (backButton) {
-        backButton.addEventListener(
-            "click",
-            backToRequirement
-        );
-    }
+  const restartButton = $("restart-btn");
 
-    if (continueValidationButton) {
-        continueValidationButton.addEventListener(
-            "click",
-            continueFromValidation
-        );
-    }
+  if (restartButton) {
+    restartButton.addEventListener(
+      "click",
+      restart
+    );
+  }
 
-    if (requirementInput) {
-        requirementInput.addEventListener(
-            "input",
-            updateCharacterCount
-        );
-    }
+  const requirementInput = $("requirement");
 
-    resetInterviewState();
-    updateCharacterCount();
-    goToStep(1);
-}
+  if (requirementInput) {
+    requirementInput.addEventListener(
+      "input",
+      updateCharacterCount
+    );
+  }
 
-/* =========================================================
-   START APPLICATION
-   ========================================================= */
+  // ----------------------------------------------------------
+  // Initial render
+  // ----------------------------------------------------------
 
-document.addEventListener(
-    "DOMContentLoaded",
-    initializeApp
-);
+  updateCharacterCount();
+  renderAll();
+});
