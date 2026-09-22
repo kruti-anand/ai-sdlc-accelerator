@@ -560,6 +560,7 @@ h1 {
 .accelerator-hero h1 span {
   color: var(--text-secondary);
 }
+
 h2 {
   margin-bottom: 10px;
   font-size: clamp(28px, 3vw, 40px);
