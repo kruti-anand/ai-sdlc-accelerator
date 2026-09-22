@@ -33,7 +33,6 @@ const interviewState = {
     questionsAsked: [],
     answers: [],
 
-    // Tracks what we have already clarified.
     clarified: {
         objective: false,
         users: false,
@@ -45,7 +44,6 @@ const interviewState = {
         successCriteria: false
     },
 
-    // Structured requirement state.
     state: {
         objective: "",
         users: "",
@@ -78,6 +76,11 @@ function goToStep(step, focusSelector = null) {
         item.classList.toggle("completed", itemStep < step);
     });
 
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
     if (focusSelector) {
         const element = $(focusSelector);
 
@@ -87,14 +90,9 @@ function goToStep(step, focusSelector = null) {
                     behavior: "smooth",
                     block: "start"
                 });
-            }, 50);
+            }, 100);
         }
     }
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
 }
 
 /* =========================================================
@@ -116,21 +114,17 @@ function analyzeRequirement() {
     }
 
     clearError();
-
     resetInterviewState();
 
     interviewState.originalRequirement = requirement;
     interviewState.status = "INTERVIEWING";
 
-    // Establish what can reasonably be inferred from the initial request.
     initializeRequirementState(requirement);
 
     const firstQuestion = selectNextQuestion();
 
     if (firstQuestion) {
         setNextQuestion(firstQuestion);
-    } else {
-        finishInterview();
     }
 
     goToStep(2, "#step-2");
@@ -138,51 +132,43 @@ function analyzeRequirement() {
 }
 
 /* =========================================================
-   INITIAL STATE
+   INITIAL REQUIREMENT STATE
    ========================================================= */
 
 function initializeRequirementState(requirement) {
-    const text = requirement.trim();
-
-    /*
-     * We intentionally do not try to invent detailed requirements.
-     * The initial request provides context, but the interview is
-     * responsible for clarifying the important details.
-     */
-
-    interviewState.state.objective = inferObjective(text);
+    interviewState.state.objective = inferObjective(requirement);
 
     if (interviewState.state.objective) {
         interviewState.clarified.objective = true;
     }
+
+    const understanding = $("#understanding-content");
+
+    if (understanding) {
+        understanding.textContent =
+            "The initial request has been captured as the working objective. The copilot will now clarify the users, scope, behavior, rules, constraints, dependencies, and success criteria before validation.";
+    }
 }
 
 function inferObjective(text) {
-    if (!text) {
-        return "";
-    }
-
-    // Simple, transparent interpretation of the user's initial intent.
-    // The interview will clarify it if needed.
-    return text;
+    return text ? text.trim() : "";
 }
 
 /* =========================================================
-   QUESTION ENGINE
+   CONTEXTUAL QUESTION ENGINE
    ========================================================= */
 
 function selectNextQuestion() {
-    const state = interviewState.state;
+    const clarified = interviewState.clarified;
 
     /*
-     * IMPORTANT:
-     * There is deliberately NO question-count rule here.
+     * There is intentionally NO fixed question count.
      *
-     * The accelerator keeps asking questions until the relevant
-     * information gaps have been addressed.
+     * The interview continues until every meaningful
+     * discovery area has been addressed.
      */
 
-    if (!interviewState.clarified.users) {
+    if (!clarified.users) {
         return {
             type: "users",
             question:
@@ -192,7 +178,7 @@ function selectNextQuestion() {
         };
     }
 
-    if (!interviewState.clarified.scope) {
+    if (!clarified.scope) {
         return {
             type: "scope",
             question:
@@ -202,7 +188,7 @@ function selectNextQuestion() {
         };
     }
 
-    if (!interviewState.clarified.requirements) {
+    if (!clarified.requirements) {
         return {
             type: "requirements",
             question:
@@ -212,7 +198,7 @@ function selectNextQuestion() {
         };
     }
 
-    if (!interviewState.clarified.businessRules) {
+    if (!clarified.businessRules) {
         return {
             type: "businessRules",
             question:
@@ -222,7 +208,7 @@ function selectNextQuestion() {
         };
     }
 
-    if (!interviewState.clarified.constraints) {
+    if (!clarified.constraints) {
         return {
             type: "constraints",
             question:
@@ -232,7 +218,7 @@ function selectNextQuestion() {
         };
     }
 
-    if (!interviewState.clarified.dependencies) {
+    if (!clarified.dependencies) {
         return {
             type: "dependencies",
             question:
@@ -242,7 +228,7 @@ function selectNextQuestion() {
         };
     }
 
-    if (!interviewState.clarified.successCriteria) {
+    if (!clarified.successCriteria) {
         return {
             type: "successCriteria",
             question:
@@ -252,7 +238,6 @@ function selectNextQuestion() {
         };
     }
 
-    // No meaningful questions remain.
     return null;
 }
 
@@ -304,12 +289,12 @@ function processAnswer(answer, markedTbd = false) {
     interviewState.currentQuestion = null;
 
     /*
-     * THIS IS THE IMPORTANT FLOW:
+     * FIRST determine whether another meaningful question exists.
      *
-     * First ask whether another meaningful question exists.
-     *
-     * Only when there is NO next question do we evaluate readiness.
+     * ONLY when there is no next question do we complete
+     * the interview.
      */
+
     const nextQuestion = selectNextQuestion();
 
     if (nextQuestion) {
@@ -339,11 +324,9 @@ function updateRequirementState(type, answer, markedTbd) {
             break;
 
         case "requirements":
-            if (markedTbd) {
-                interviewState.state.requirements.push("TBD");
-            } else {
-                interviewState.state.requirements.push(answer);
-            }
+            interviewState.state.requirements = markedTbd
+                ? ["TBD"]
+                : [answer];
 
             interviewState.clarified.requirements = true;
             break;
@@ -371,35 +354,26 @@ function updateRequirementState(type, answer, markedTbd) {
 }
 
 /* =========================================================
-   READINESS
+   INTERVIEW COMPLETION
    ========================================================= */
 
 function isReadyForValidation() {
     const state = interviewState.state;
 
-    const hasObjective =
-        Boolean(state.objective && state.objective.trim());
-
-    const hasScope =
-        Boolean(state.scope && state.scope.trim());
-
-    const hasRequirement =
+    return Boolean(
+        state.objective &&
+        state.objective.trim() &&
+        state.scope &&
+        state.scope.trim() &&
         Array.isArray(state.requirements) &&
-        state.requirements.length > 0;
-
-    return (
-        hasObjective &&
-        hasScope &&
-        hasRequirement
+        state.requirements.length > 0
     );
 }
 
 function finishInterview() {
     /*
-     * We only arrive here after selectNextQuestion()
-     * returns null.
-     *
-     * Therefore the contextual interview is complete.
+     * This function is reached only after the question engine
+     * has no meaningful question remaining.
      */
 
     if (isReadyForValidation()) {
@@ -407,9 +381,10 @@ function finishInterview() {
         interviewState.currentQuestion = null;
     } else {
         /*
-         * Safety fallback. This should rarely be reached because
-         * the question engine is designed to gather the required
-         * information before finishing.
+         * Safety fallback.
+         *
+         * This should not normally occur because the question
+         * engine collects the required fields.
          */
         interviewState.status = "INTERVIEWING";
 
@@ -434,40 +409,52 @@ function finishInterview() {
 function renderInterview() {
     const question = interviewState.currentQuestion;
 
-    const currentQuestionElement = $("#current-question");
-    const questionNumberElement = $("#question-number");
-    const questionWhyElement = $("#question-why");
+    const currentQuestion = $("#current-question");
+    const questionNumber = $("#question-number");
+    const questionWhy = $("#question-why");
+
     const answerInput = $("#current-answer");
-    const readyMessage = $("#ready-message");
+    const answerArea = $("#answer-area");
+    const questionState = $("#question-state");
+
+    const completionState = $("#completion-state");
+
     const continueButton = $("#continue-btn");
     const tbdButton = $("#tbd-btn");
+
     const reviewButton = $("#review-requirement-btn");
 
-    if (!currentQuestionElement) {
+    const interviewStatus = $("#interview-status");
+
+    if (!currentQuestion) {
         return;
     }
 
-    /*
-     * READY STATE
-     */
+    /* =====================================================
+       COMPLETED STATE
+       ===================================================== */
+
     if (interviewState.status === "READY_FOR_VALIDATION") {
-        if (questionNumberElement) {
-            questionNumberElement.textContent = "";
+        if (interviewStatus) {
+            interviewStatus.innerHTML =
+                '<span class="status-dot"></span> Complete';
         }
 
-        currentQuestionElement.textContent =
-            "Requirement is ready for validation.";
+        if (questionState) {
+            questionState.hidden = true;
+        }
 
-        if (questionWhyElement) {
-            questionWhyElement.textContent =
-                "The copilot has completed the contextual interview. Review the structured requirement before BRD generation.";
+        if (answerArea) {
+            answerArea.hidden = true;
+        }
+
+        if (completionState) {
+            completionState.hidden = false;
         }
 
         if (answerInput) {
             answerInput.value = "";
             answerInput.disabled = true;
-            answerInput.placeholder =
-                "Interview complete — review the requirement.";
         }
 
         if (continueButton) {
@@ -476,17 +463,6 @@ function renderInterview() {
 
         if (tbdButton) {
             tbdButton.hidden = true;
-        }
-
-        if (readyMessage) {
-            readyMessage.hidden = false;
-            readyMessage.innerHTML = `
-                <strong>Requirement is ready for validation.</strong>
-                <p>
-                    The copilot has enough information for you to review
-                    the requirement before a BRD is generated.
-                </p>
-            `;
         }
 
         if (reviewButton) {
@@ -499,44 +475,61 @@ function renderInterview() {
         return;
     }
 
-    /*
-     * INTERVIEWING STATE
-     */
-    if (question) {
-        if (questionNumberElement) {
-            questionNumberElement.textContent =
-                `QUESTION ${String(interviewState.questionNumber).padStart(2, "0")}`;
-        }
+    /* =====================================================
+       ACTIVE INTERVIEW STATE
+       ===================================================== */
 
-        currentQuestionElement.textContent = question.question;
+    if (!question) {
+        return;
+    }
 
-        if (questionWhyElement) {
-            questionWhyElement.textContent = question.why;
-        }
+    if (interviewStatus) {
+        interviewStatus.innerHTML =
+            '<span class="status-dot"></span> Interviewing';
+    }
 
-        if (answerInput) {
-            answerInput.disabled = false;
-            answerInput.placeholder =
-                "Enter your answer...";
-            answerInput.value = "";
-        }
+    if (questionState) {
+        questionState.hidden = false;
+    }
 
-        if (continueButton) {
-            continueButton.hidden = false;
-        }
+    if (answerArea) {
+        answerArea.hidden = false;
+    }
 
-        if (tbdButton) {
-            tbdButton.hidden = false;
-        }
+    if (completionState) {
+        completionState.hidden = true;
+    }
 
-        if (readyMessage) {
-            readyMessage.hidden = true;
-            readyMessage.innerHTML = "";
-        }
+    if (questionNumber) {
+        questionNumber.textContent =
+            `QUESTION ${String(
+                interviewState.questionNumber
+            ).padStart(2, "0")}`;
+    }
 
-        if (reviewButton) {
-            reviewButton.hidden = true;
-        }
+    currentQuestion.textContent = question.question;
+
+    if (questionWhy) {
+        questionWhy.textContent = question.why;
+    }
+
+    if (answerInput) {
+        answerInput.disabled = false;
+        answerInput.value = "";
+        answerInput.placeholder =
+            "Enter your answer...";
+    }
+
+    if (continueButton) {
+        continueButton.hidden = false;
+    }
+
+    if (tbdButton) {
+        tbdButton.hidden = false;
+    }
+
+    if (reviewButton) {
+        reviewButton.hidden = true;
     }
 
     renderInterviewHistory();
@@ -548,14 +541,15 @@ function renderInterview() {
    ========================================================= */
 
 function renderInterviewHistory() {
-    const container = $("#interview-history");
+    const container = $("#history-content");
 
     if (!container) {
         return;
     }
 
     if (!interviewState.answers.length) {
-        container.innerHTML = "";
+        container.innerHTML =
+            "<p>No questions answered yet.</p>";
         return;
     }
 
@@ -564,7 +558,7 @@ function renderInterviewHistory() {
             return `
                 <div class="history-item">
                     <div class="history-question">
-                        Q-${String(item.number).padStart(3, "0")}
+                        Q-${String(item.number).padStart(2, "0")}
                     </div>
 
                     <div class="history-question-text">
@@ -591,17 +585,31 @@ function renderInterviewHistory() {
 function renderRequirementState() {
     const state = interviewState.state;
 
-    setText("#state-objective", state.objective || "Not established yet");
-    setText("#state-scope", state.scope || "Not established yet");
-    setText("#state-users", state.users || "Not established yet");
+    setText(
+        "#state-objective",
+        state.objective || "Not established yet"
+    );
+
+    setText(
+        "#state-scope",
+        state.scope || "Not established yet"
+    );
+
+    setText(
+        "#state-users",
+        state.users || "Not established yet"
+    );
+
     setText(
         "#state-constraints",
         state.constraints || "Not established yet"
     );
+
     setText(
         "#state-dependencies",
         state.dependencies || "Not established yet"
     );
+
     setText(
         "#state-success",
         state.successCriteria || "Not established yet"
@@ -634,6 +642,8 @@ function countKnownFields() {
     if (interviewState.state.objective) count++;
     if (interviewState.state.users) count++;
     if (interviewState.state.scope) count++;
+    if (interviewState.state.requirements.length) count++;
+    if (interviewState.state.businessRules) count++;
     if (interviewState.state.constraints) count++;
     if (interviewState.state.dependencies) count++;
     if (interviewState.state.successCriteria) count++;
@@ -684,7 +694,8 @@ function renderValidation() {
             : "None identified"
     );
 
-    const requirementsElement = $("#validation-requirements");
+    const requirementsElement =
+        $("#validation-requirements");
 
     if (requirementsElement) {
         requirementsElement.innerHTML =
@@ -698,7 +709,8 @@ function renderValidation() {
                 : "<li>No requirements captured</li>";
     }
 
-    const successElement = $("#validation-success");
+    const successElement =
+        $("#validation-success");
 
     if (successElement) {
         successElement.textContent =
@@ -713,14 +725,15 @@ function renderValidation() {
 function generateBRD() {
     const state = interviewState.state;
 
-    const requirements = state.requirements.length
-        ? state.requirements
-            .map(
-                (item, index) =>
-                    `${index + 1}. ${item}`
-            )
-            .join("\n")
-        : "No requirements captured.";
+    const requirements =
+        state.requirements.length
+            ? state.requirements
+                .map(
+                    (item, index) =>
+                        `${index + 1}. ${item}`
+                )
+                .join("\n")
+            : "No requirements captured.";
 
     const brd = `
 BUSINESS REQUIREMENTS DOCUMENT
@@ -750,9 +763,11 @@ ${state.dependencies || "TBD"}
 ${state.successCriteria || "TBD"}
 
 9. ASSUMPTIONS
-${state.assumptions.length
-    ? state.assumptions.join("\n")
-    : "None identified"}
+${
+    state.assumptions.length
+        ? state.assumptions.join("\n")
+        : "None identified"
+}
 
 10. TRACEABILITY
 Source requirement:
@@ -778,12 +793,6 @@ requirements interview.
     }
 }
 
-function approveRequirement() {
-    renderValidation();
-    generateBRD();
-    goToStep(4, "#step-4");
-}
-
 /* =========================================================
    BUTTON ACTIONS
    ========================================================= */
@@ -803,13 +812,34 @@ function markTbd() {
 }
 
 function reviewRequirement() {
+    if (
+        interviewState.status !==
+        "READY_FOR_VALIDATION"
+    ) {
+        return;
+    }
+
     renderValidation();
     goToStep(3, "#step-3");
+}
+
+function approveRequirement() {
+    renderValidation();
+    generateBRD();
+    goToStep(4, "#step-4");
 }
 
 function backToRequirement() {
     goToStep(1, "#step-1");
 }
+
+function continueFromValidation() {
+    goToStep(2, "#step-2");
+}
+
+/* =========================================================
+   RESTART
+   ========================================================= */
 
 function restart() {
     resetInterviewState();
@@ -865,17 +895,48 @@ function resetInterviewState() {
 
     interviewState.brd = null;
 
-    const readyMessage = $("#ready-message");
+    const completionState = $("#completion-state");
 
-    if (readyMessage) {
-        readyMessage.hidden = true;
-        readyMessage.innerHTML = "";
+    if (completionState) {
+        completionState.hidden = true;
+    }
+
+    const questionState = $("#question-state");
+
+    if (questionState) {
+        questionState.hidden = false;
+    }
+
+    const answerArea = $("#answer-area");
+
+    if (answerArea) {
+        answerArea.hidden = false;
     }
 
     const reviewButton = $("#review-requirement-btn");
 
     if (reviewButton) {
         reviewButton.hidden = true;
+    }
+
+    const traceabilityBanner =
+        $("#traceability-banner");
+
+    if (traceabilityBanner) {
+        traceabilityBanner.hidden = true;
+    }
+
+    const brdContent = $("#brd-content");
+
+    if (brdContent) {
+        brdContent.textContent = "";
+    }
+
+    const historyContent = $("#history-content");
+
+    if (historyContent) {
+        historyContent.innerHTML =
+            "<p>No questions answered yet.</p>";
     }
 }
 
@@ -909,7 +970,8 @@ function updateCharacterCount() {
         return;
     }
 
-    counter.textContent = `${input.value.length} characters`;
+    counter.textContent =
+        `${input.value.length} characters`;
 }
 
 /* =========================================================
@@ -948,7 +1010,9 @@ async function copyBRD() {
     }
 
     try {
-        await navigator.clipboard.writeText(interviewState.brd);
+        await navigator.clipboard.writeText(
+            interviewState.brd
+        );
 
         const button = $("#copy-brd-btn");
 
@@ -969,10 +1033,26 @@ async function copyBRD() {
 }
 
 /* =========================================================
+   HERO NAVIGATION
+   ========================================================= */
+
+function exploreAccelerator() {
+    const target = $("#requirements-workflow");
+
+    if (target) {
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+}
+
+/* =========================================================
    EVENT LISTENERS
    ========================================================= */
 
 function initializeApp() {
+    const exploreButton = $("#explore-btn");
     const analyzeButton = $("#analyze-btn");
     const sampleButton = $("#sample-btn");
     const continueButton = $("#continue-btn");
@@ -982,11 +1062,22 @@ function initializeApp() {
     const copyButton = $("#copy-brd-btn");
     const restartButton = $("#restart-btn");
     const backButton = $("#back-to-requirement");
-    const continueInterviewButton = $("#continue-interview-btn");
+    const continueValidationButton =
+        $("#continue-interview-btn");
     const requirementInput = $("#requirement");
 
+    if (exploreButton) {
+        exploreButton.addEventListener(
+            "click",
+            exploreAccelerator
+        );
+    }
+
     if (analyzeButton) {
-        analyzeButton.addEventListener("click", analyzeRequirement);
+        analyzeButton.addEventListener(
+            "click",
+            analyzeRequirement
+        );
     }
 
     if (sampleButton) {
@@ -1045,10 +1136,10 @@ function initializeApp() {
         );
     }
 
-    if (continueInterviewButton) {
-        continueInterviewButton.addEventListener(
+    if (continueValidationButton) {
+        continueValidationButton.addEventListener(
             "click",
-            () => goToStep(2, "#step-2")
+            continueFromValidation
         );
     }
 
@@ -1059,6 +1150,7 @@ function initializeApp() {
         );
     }
 
+    resetInterviewState();
     updateCharacterCount();
     goToStep(1);
 }
