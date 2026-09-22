@@ -557,8 +557,9 @@ h1 {
   font-weight: 760;
 }
 
+.accelerator-hero h1,
 .accelerator-hero h1 span {
-  color: var(--text-secondary);
+  color: var(--text);
 }
 
 h2 {
