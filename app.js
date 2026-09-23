@@ -356,7 +356,7 @@ if (!hasEnoughContext) {
   // Process interview answer
   // ----------------------------------------------------------
 
-  function processAnswer(markAsTbd = false) {
+  function processAnswer(markAs = false) {
     const answerInput = $("current-answer");
 
     if (!answerInput) {
@@ -454,9 +454,9 @@ if (!hasEnoughContext) {
     }
 
     if (isTbd) {
-      interviewState.state.assumptions.push(
-        `${key}: requires human validation.`
-      );
+  interviewState.state.assumptions.push(
+    `TBD — ${interviewState.answers[interviewState.answers.length - 1].question}`
+    );
     }
   }
 
