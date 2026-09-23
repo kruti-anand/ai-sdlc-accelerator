@@ -141,13 +141,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // ----------------------------------------------------------
   // Requirement validation
   //
-  // The purpose of this gate is only to determine whether
-  // there is enough content to START discovery.
+  // This gate only determines whether there is enough content
+  // to begin discovery.
   //
-  // It does not attempt to judge whether the requirement is
-  // complete, well written, or technically correct.
-  //
-  // No business-domain vocabulary is hard-coded here.
+  // It does not attempt to determine whether the requirement
+  // is complete, correct, or technically valid.
   // ----------------------------------------------------------
 
   function validateRequirementForDiscovery(requirement) {
@@ -228,12 +226,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ----------------------------------------------------------
-  // Contextual discovery
+  // Discovery questions
   //
-  // The questions represent the requirement areas that a
-  // delivery lead would normally clarify before creating a BRD.
-  //
-  // The sequence continues until all areas have been addressed.
+  // These represent standard requirement areas a delivery lead
+  // would normally clarify before creating a BRD.
   // ----------------------------------------------------------
 
   function selectNextQuestion() {
@@ -359,13 +355,14 @@ document.addEventListener("DOMContentLoaded", () => {
       currentQuestion.key,
       finalAnswer,
       markAsTbd,
-      currentQuestion.question
+      answer
     );
 
     interviewState.currentQuestion = null;
 
-    // Look for another meaningful discovery area first.
-    // Only when none remain do we move to validation.
+    // Look for another discovery area first.
+    // Only when no areas remain do we move to validation.
+
     const nextQuestion = selectNextQuestion();
 
     if (nextQuestion) {
@@ -393,7 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
     key,
     answer,
     isTbd,
-    question
+    originalAnswer
   ) {
     interviewState.clarified[key] = true;
 
@@ -425,28 +422,67 @@ document.addEventListener("DOMContentLoaded", () => {
       interviewState.state.successCriteria = answer;
     }
 
-    // Preserve explicit TBD items for human validation.
+    // --------------------------------------------------------
+    // Preserve only meaningful TBD information.
+    //
+    // Do not store the entire discovery question as a TBD item.
+    // --------------------------------------------------------
 
     if (isTbd) {
-      interviewState.state.assumptions.push(
-        `TBD — ${question}`
-      );
-
+      addTbdItem(key);
       return;
     }
 
-    const tbdItems = String(answer)
+    // If the user's own answer contains TBD, preserve that
+    // information without adding the discovery question.
+
+    const tbdItems = String(originalAnswer)
       .split(/\n+/)
       .map((item) => item.trim())
       .filter(
-        (item) => /\bTBD\b/i.test(item)
+        (item) =>
+          item &&
+          /\bTBD\b/i.test(item)
       );
 
     tbdItems.forEach((item) => {
-      interviewState.state.assumptions.push(
-        `TBD — ${item}`
-      );
+      addTbdItem(key, item);
     });
+  }
+
+  // ----------------------------------------------------------
+  // TBD handling
+  // ----------------------------------------------------------
+
+  function addTbdItem(key, value = "") {
+    const labels = {
+      businessRules: "Business rules / approval criteria",
+      constraints: "Additional constraints",
+      dependencies: "Dependencies",
+      users: "Users / stakeholders",
+      scope: "Scope details",
+      requirements: "Additional requirements",
+      successCriteria: "Success criteria"
+    };
+
+    const label =
+      labels[key] || "Additional information";
+
+    const tbdText =
+      value && value !== "TBD — requires human validation."
+        ? `${label}: ${value}`
+        : `${label}: TBD`;
+
+    const alreadyExists =
+      interviewState.state.assumptions.includes(
+        tbdText
+      );
+
+    if (!alreadyExists) {
+      interviewState.state.assumptions.push(
+        tbdText
+      );
+    }
   }
 
   // ----------------------------------------------------------
@@ -544,6 +580,10 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
+  // ----------------------------------------------------------
+  // Interview rendering
+  // ----------------------------------------------------------
+
   function renderInterview() {
     const status = $("interview-status");
     const questionState = $("question-state");
@@ -561,28 +601,6 @@ document.addEventListener("DOMContentLoaded", () => {
       $("review-requirement-btn");
 
     // --------------------------------------------------------
-    // Status
-    // --------------------------------------------------------
-
-    if (status) {
-      if (
-        interviewState.status ===
-        "INTERVIEWING"
-      ) {
-        status.textContent =
-          "Contextual discovery in progress";
-      } else if (
-        interviewState.status ===
-        "READY_FOR_VALIDATION"
-      ) {
-        status.textContent =
-          "Ready for human validation";
-      } else {
-        status.textContent = "";
-      }
-    }
-
-    // --------------------------------------------------------
     // Interviewing
     // --------------------------------------------------------
 
@@ -590,6 +608,11 @@ document.addEventListener("DOMContentLoaded", () => {
       interviewState.status ===
       "INTERVIEWING"
     ) {
+      if (status) {
+        status.textContent =
+          "Contextual discovery in progress";
+      }
+
       if (questionState) {
         questionState.removeAttribute(
           "hidden"
@@ -662,6 +685,11 @@ document.addEventListener("DOMContentLoaded", () => {
       interviewState.status ===
       "READY_FOR_VALIDATION"
     ) {
+      if (status) {
+        status.textContent =
+          "Ready for human validation";
+      }
+
       if (questionState) {
         questionState.setAttribute(
           "hidden",
@@ -722,6 +750,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // --------------------------------------------------------
     // Initial state
     // --------------------------------------------------------
+
+    if (status) {
+      status.textContent = "";
+    }
 
     if (questionState) {
       questionState.setAttribute(
@@ -859,6 +891,12 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     setText(
+      "state-business-rules",
+      state.businessRules ||
+        "Not yet defined"
+    );
+
+    setText(
       "state-constraints",
       state.constraints ||
         "Not yet defined"
@@ -945,6 +983,12 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     setText(
+      "validation-business-rules",
+      state.businessRules ||
+        "Not yet defined"
+    );
+
+    setText(
       "validation-constraints",
       state.constraints ||
         "Not yet defined"
@@ -959,8 +1003,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setText(
       "validation-assumptions",
       state.assumptions.length > 0
-        ? state.assumptions.join(" ")
-        : "No additional assumptions recorded."
+        ? state.assumptions.join("\n")
+        : "No additional assumptions or TBD items recorded."
     );
 
     setText(
@@ -1084,15 +1128,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <div class="brd-section">
         <h3>8. Assumptions / TBD Items</h3>
-        <p>
-          ${
-            state.assumptions.length > 0
-              ? escapeHtml(
-                  state.assumptions.join(" ")
-                )
-              : "None recorded."
-          }
-        </p>
+        ${
+          state.assumptions.length > 0
+            ? `
+              <ul>
+                ${state.assumptions
+                  .map(
+                    (item) =>
+                      `<li>${escapeHtml(item)}</li>`
+                  )
+                  .join("")}
+              </ul>
+            `
+            : "<p>None recorded.</p>"
+        }
       </div>
 
       <div class="brd-section">
