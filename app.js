@@ -469,7 +469,8 @@ document.addEventListener("DOMContentLoaded", () => {
       labels[key] || "Additional information";
 
     const tbdText =
-      value && value !== "TBD — requires human validation."
+      value &&
+      value !== "TBD — requires human validation."
         ? `${label}: ${value}`
         : `${label}: TBD`;
 
@@ -483,6 +484,26 @@ document.addEventListener("DOMContentLoaded", () => {
         tbdText
       );
     }
+  }
+
+  // ----------------------------------------------------------
+  // Extract concise TBD information for display
+  // ----------------------------------------------------------
+
+  function extractTbdItem(item) {
+    const text = String(item || "").trim();
+
+    if (!text) {
+      return "";
+    }
+
+    const colonIndex = text.indexOf(":");
+
+    if (colonIndex === -1) {
+      return text;
+    }
+
+    return `${text.substring(0, colonIndex).trim()}: TBD`;
   }
 
   // ----------------------------------------------------------
@@ -1000,12 +1021,28 @@ document.addEventListener("DOMContentLoaded", () => {
         "Not yet defined"
     );
 
-    setText(
-      "validation-assumptions",
-      state.assumptions.length > 0
-        ? state.assumptions.join("\n")
-        : "No additional assumptions or TBD items recorded."
-    );
+    const assumptionsElement =
+      $("validation-assumptions");
+
+    if (assumptionsElement) {
+      if (state.assumptions.length > 0) {
+        assumptionsElement.innerHTML = `
+          <ul class="tbd-list">
+            ${state.assumptions
+              .map(
+                (item) =>
+                  `<li>${escapeHtml(
+                    extractTbdItem(item)
+                  )}</li>`
+              )
+              .join("")}
+          </ul>
+        `;
+      } else {
+        assumptionsElement.textContent =
+          "No additional assumptions or TBD items recorded.";
+      }
+    }
 
     setText(
       "validation-success",
@@ -1131,11 +1168,13 @@ document.addEventListener("DOMContentLoaded", () => {
         ${
           state.assumptions.length > 0
             ? `
-              <ul>
+              <ul class="tbd-list">
                 ${state.assumptions
                   .map(
                     (item) =>
-                      `<li>${escapeHtml(item)}</li>`
+                      `<li>${escapeHtml(
+                        extractTbdItem(item)
+                      )}</li>`
                   )
                   .join("")}
               </ul>
@@ -1312,7 +1351,12 @@ ${state.dependencies}
 ASSUMPTIONS / TBD ITEMS
 ${
   state.assumptions.length > 0
-    ? state.assumptions.join("\n")
+    ? state.assumptions
+        .map(
+          (item) =>
+            `• ${extractTbdItem(item)}`
+        )
+        .join("\n")
     : "None recorded."
 }
 
