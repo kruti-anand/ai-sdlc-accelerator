@@ -196,18 +196,23 @@ document.addEventListener("DOMContentLoaded", () => {
       /\b(outcome|outcomes|experience|efficiency|visibility|accuracy|speed|productivity|cost|costs|risk|risks|compliance|quality|performance)\b/
     ];
 
-    const hasContext = contextPatterns.some((pattern) =>
-      pattern.test(normalized)
-    );
+    const matchedContextCategories = contextPatterns.filter(
+  (pattern) => pattern.test(normalized)
+).length;
 
-    if (!hasContext) {
-      return {
-        ready: false,
-        message:
-          "I need a little more context before starting discovery. What process, system, capability, or group is affected by this request?"
-      };
-    }
+// A single generic term such as "reporting", "dashboard",
+// or "application" is not enough to begin discovery.
+// We want at least two contextual signals.
+const hasEnoughContext =
+  matchedContextCategories >= 2;
 
+if (!hasEnoughContext) {
+  return {
+    ready: false,
+    message:
+      "I need a little more context before starting discovery. What process, system, capability, or group is affected by this request?"
+  };
+}
     return {
       ready: true,
       message: ""
