@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ).length;
 
     const hasEnoughContext =
-      matchedContextCategories >= 2;
+      matchedContextCategories >= 1;
 
     if (!hasEnoughContext) {
       return {
