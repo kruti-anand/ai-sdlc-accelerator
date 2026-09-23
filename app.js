@@ -453,11 +453,22 @@ if (!hasEnoughContext) {
       interviewState.state.successCriteria = answer;
     }
 
-    if (isTbd) {
+   if (isTbd) {
   interviewState.state.assumptions.push(
     `TBD — ${interviewState.answers[interviewState.answers.length - 1].question}`
+  );
+} else {
+  const tbdItems = String(answer)
+    .split(/\n+/)
+    .map((item) => item.trim())
+    .filter((item) => /\bTBD\b/i.test(item));
+
+  tbdItems.forEach((item) => {
+    interviewState.state.assumptions.push(
+      `TBD — ${item}`
     );
-    }
+  });
+}
   }
 
   // ----------------------------------------------------------
@@ -745,7 +756,10 @@ if (!hasEnoughContext) {
       "state-dependencies",
       state.dependencies || "Not yet defined"
     );
-
+    setText(
+      "validation-constraints",
+  state.constraints || "Not yet defined"
+    );
     setText(
       "state-success",
       state.successCriteria || "Not yet defined"
