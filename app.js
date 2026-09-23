@@ -139,15 +139,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ----------------------------------------------------------
-  // Requirement validation gate
+  // Requirement validation
+  //
+  // The purpose of this gate is only to determine whether
+  // there is enough content to START discovery.
+  //
+  // It does not attempt to judge whether the requirement is
+  // complete, well written, or technically correct.
+  //
+  // No business-domain vocabulary is hard-coded here.
   // ----------------------------------------------------------
 
   function validateRequirementForDiscovery(requirement) {
     const normalized = requirement
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+      .trim()
+      .replace(/\s+/g, " ");
 
     if (!normalized) {
       return {
@@ -157,56 +163,14 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     }
 
-    const actionPatterns = [
-      /\b(build|create|develop|design|implement|launch|introduce)\b/,
-      /\b(improve|enhance|modernize|simplify|streamline|optimize)\b/,
-      /\b(automate|replace|upgrade|migrate|integrate|connect)\b/,
-      /\b(enable|support|provide|establish|centralize)\b/,
-      /\b(reduce|increase|eliminate|prevent)\b/
-    ];
+    const wordCount =
+      normalized.split(" ").filter(Boolean).length;
 
-    const hasAction = actionPatterns.some((pattern) =>
-      pattern.test(normalized)
-    );
-
-    if (!hasAction) {
+    if (wordCount < 3) {
       return {
         ready: false,
         message:
-          "I need a little more context before starting discovery. What are you trying to build, change, improve, automate, or accomplish?"
-      };
-    }
-
-    const contextPatterns = [
-  // People / stakeholders
-  /\b(customer|customers|user|users|employee|employees|staff|team|teams|business|operations|manager|managers|analyst|analysts|stakeholder|stakeholders|client|clients)\b/,
-
-  // Process / workflow context
-  /\b(process|workflow|intake|reporting|report|approval|approvals|request|requests|service|services|operations)\b/,
-
-  // System / technology context
-  /\b(system|systems|application|applications|app|apps|platform|portal|dashboard|api|apis|database|data|integration|integrations|website|software|technology|AI)\b/,
-
-  // Capability / solution context
-  /\b(capability|capabilities|feature|features|functionality|screen|interface|experience|solution|component|module)\b/,
-
-  // Outcome / measurable context
-  /\b(outcome|outcomes|efficiency|visibility|accuracy|speed|productivity|cost|costs|risk|risks|compliance|quality|performance)\b/
-];
-
-    const matchedContextCategories =
-      contextPatterns.filter((pattern) =>
-        pattern.test(normalized)
-      ).length;
-
-    const hasEnoughContext =
-      matchedContextCategories >= 1;
-
-    if (!hasEnoughContext) {
-      return {
-        ready: false,
-        message:
-          "I need a little more context before starting discovery. What process, system, capability, or group is affected by this request?"
+          "Add a little more detail about what you want to build or change before starting discovery."
       };
     }
 
@@ -265,6 +229,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ----------------------------------------------------------
   // Contextual discovery
+  //
+  // The questions represent the requirement areas that a
+  // delivery lead would normally clarify before creating a BRD.
+  //
+  // The sequence continues until all areas have been addressed.
   // ----------------------------------------------------------
 
   function selectNextQuestion() {
@@ -338,6 +307,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     interviewState.currentQuestion = nextQuestion;
+
     interviewState.questionNumber += 1;
 
     interviewState.questionsAsked.push(
@@ -394,6 +364,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     interviewState.currentQuestion = null;
 
+    // Look for another meaningful discovery area first.
+    // Only when none remain do we move to validation.
     const nextQuestion = selectNextQuestion();
 
     if (nextQuestion) {
@@ -453,12 +425,13 @@ document.addEventListener("DOMContentLoaded", () => {
       interviewState.state.successCriteria = answer;
     }
 
-    // Capture explicit TBD information without
-    // replacing the user's original answer.
+    // Preserve explicit TBD items for human validation.
+
     if (isTbd) {
       interviewState.state.assumptions.push(
         `TBD — ${question}`
       );
+
       return;
     }
 
@@ -587,6 +560,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const reviewButton =
       $("review-requirement-btn");
 
+    // --------------------------------------------------------
+    // Status
+    // --------------------------------------------------------
+
     if (status) {
       if (
         interviewState.status ===
@@ -604,6 +581,10 @@ document.addEventListener("DOMContentLoaded", () => {
         status.textContent = "";
       }
     }
+
+    // --------------------------------------------------------
+    // Interviewing
+    // --------------------------------------------------------
 
     if (
       interviewState.status ===
@@ -644,7 +625,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (answerInput) {
         answerInput.value = "";
-        answerInput.focus();
       }
 
       if (tbdButton) {
@@ -673,6 +653,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       return;
     }
+
+    // --------------------------------------------------------
+    // Ready for validation
+    // --------------------------------------------------------
 
     if (
       interviewState.status ===
@@ -735,7 +719,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Default / initial state
+    // --------------------------------------------------------
+    // Initial state
+    // --------------------------------------------------------
 
     if (questionState) {
       questionState.setAttribute(
@@ -794,6 +780,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ----------------------------------------------------------
+  // Interview history
+  // ----------------------------------------------------------
+
   function renderInterviewHistory() {
     const container =
       $("interview-history");
@@ -834,6 +824,10 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .join("");
   }
+
+  // ----------------------------------------------------------
+  // Requirement state
+  // ----------------------------------------------------------
 
   function renderRequirementState() {
     const state =
@@ -885,6 +879,10 @@ document.addEventListener("DOMContentLoaded", () => {
     updateMetrics();
   }
 
+  // ----------------------------------------------------------
+  // Metrics
+  // ----------------------------------------------------------
+
   function updateMetrics() {
     const fields = [
       interviewState.state.objective,
@@ -918,6 +916,10 @@ document.addEventListener("DOMContentLoaded", () => {
       `${open}`
     );
   }
+
+  // ----------------------------------------------------------
+  // Human validation
+  // ----------------------------------------------------------
 
   function renderValidation() {
     const state =
@@ -1105,7 +1107,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ----------------------------------------------------------
-  // Human validation
+  // Human validation actions
   // ----------------------------------------------------------
 
   function reviewRequirement() {
@@ -1135,6 +1137,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function continueInterview() {
     goToStep(2);
     renderInterview();
+  }
+
+  // ----------------------------------------------------------
+  // Return to requirement
+  // ----------------------------------------------------------
+
+  function backToRequirement() {
+    goToStep(1);
   }
 
   // ----------------------------------------------------------
@@ -1433,6 +1443,16 @@ ${state.successCriteria}
     restartButton.addEventListener(
       "click",
       restart
+    );
+  }
+
+  const backButton =
+    $("back-to-requirement");
+
+  if (backButton) {
+    backButton.addEventListener(
+      "click",
+      backToRequirement
     );
   }
 
