@@ -178,14 +178,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const contextPatterns = [
-      /\b(customer|customers|user|users|employee|employees|staff|team|teams|business|operations|manager|managers|analyst|analysts|stakeholder|stakeholders|client|clients)\b/,
+  // People / stakeholders
+  /\b(customer|customers|user|users|employee|employees|staff|team|teams|business|operations|manager|managers|analyst|analysts|stakeholder|stakeholders|client|clients)\b/,
 
-      /\b(process|workflow|intake|reporting|report|claims|payments|loan|loans|orders|onboarding|approval|approvals|request|requests|service|services|operations)\b/,
+  // Process / workflow context
+  /\b(process|workflow|intake|reporting|report|approval|approvals|request|requests|service|services|operations)\b/,
 
-      /\b(system|systems|application|applications|app|apps|platform|portal|dashboard|api|apis|database|data|integration|integrations|website|software|technology)\b/,
+  // System / technology context
+  /\b(system|systems|application|applications|app|apps|platform|portal|dashboard|api|apis|database|data|integration|integrations|website|software|technology|AI)\b/,
 
-      /\b(outcome|outcomes|experience|efficiency|visibility|accuracy|speed|productivity|cost|costs|risk|risks|compliance|quality|performance)\b/
-    ];
+  // Capability / solution context
+  /\b(capability|capabilities|feature|features|functionality|screen|interface|experience|solution|component|module)\b/,
+
+  // Outcome / measurable context
+  /\b(outcome|outcomes|efficiency|visibility|accuracy|speed|productivity|cost|costs|risk|risks|compliance|quality|performance)\b/
+];
 
     const matchedContextCategories =
       contextPatterns.filter((pattern) =>
