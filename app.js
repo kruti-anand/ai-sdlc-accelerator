@@ -126,6 +126,95 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ----------------------------------------------------------
+  // Requirement validation gate
+  // ----------------------------------------------------------
+
+  function validateRequirementForDiscovery(requirement) {
+    const normalized = requirement
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!normalized) {
+      return {
+        ready: false,
+        message: "Describe what you want to accomplish before starting discovery."
+      };
+    }
+
+    // --------------------------------------------------------
+    // Look for a recognizable action/change.
+    // This is intentionally lightweight rather than AI-based.
+    // --------------------------------------------------------
+
+    const actionPatterns = [
+      /\b(build|create|develop|design|implement|launch|introduce)\b/,
+      /\b(improve|enhance|modernize|simplify|streamline|optimize)\b/,
+      /\b(automate|replace|upgrade|migrate|integrate|connect)\b/,
+      /\b(enable|support|provide|establish|centralize)\b/,
+      /\b(reduce|increase|eliminate|prevent)\b/
+    ];
+
+    const hasAction = actionPatterns.some((pattern) =>
+      pattern.test(normalized)
+    );
+
+    if (!hasAction) {
+      return {
+        ready: false,
+        message:
+          "I need a little more context before starting discovery. What are you trying to build, change, improve, automate, or accomplish?"
+      };
+    }
+
+    // --------------------------------------------------------
+    // Look for meaningful context.
+    //
+    // Context can be:
+    // - a person/group
+    // - a business/process area
+    // - a system/application
+    // - a capability/object
+    // - a business outcome
+    //
+    // This is NOT intended to prove completeness.
+    // It only determines whether discovery can begin.
+    // --------------------------------------------------------
+
+    const contextPatterns = [
+      // People / stakeholders
+      /\b(customer|customers|user|users|employee|employees|staff|team|teams|business|operations|manager|managers|analyst|analysts|stakeholder|stakeholders|client|clients)\b/,
+
+      // Processes / business areas
+      /\b(process|workflow|intake|reporting|report|claims|payments|loan|loans|orders|onboarding|approval|approvals|request|requests|service|services|operations)\b/,
+
+      // Technology / systems
+      /\b(system|systems|application|applications|app|apps|platform|portal|dashboard|api|apis|database|data|integration|integrations|website|software|technology)\b/,
+
+      // Outcomes
+      /\b(outcome|outcomes|experience|efficiency|visibility|accuracy|speed|productivity|cost|costs|risk|risks|compliance|quality|performance)\b/
+    ];
+
+    const hasContext = contextPatterns.some((pattern) =>
+      pattern.test(normalized)
+    );
+
+    if (!hasContext) {
+      return {
+        ready: false,
+        message:
+          "I need a little more context before starting discovery. What process, system, capability, or group is affected by this request?"
+      };
+    }
+
+    return {
+      ready: true,
+      message: ""
+    };
+  }
+
+  // ----------------------------------------------------------
   // Requirement analysis
   // ----------------------------------------------------------
 
@@ -142,12 +231,30 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // --------------------------------------------------------
+    // Lightweight requirement-validation gate
+    //
+    // We only check whether there is enough context to begin
+    // meaningful discovery. We are NOT judging whether the
+    // requirement is complete.
+    // --------------------------------------------------------
+
+    const validation = validateRequirementForDiscovery(
+      requirement
+    );
+
+    if (!validation.ready) {
+      showError(validation.message);
+      return;
+    }
+
     resetInterviewState();
 
     interviewState.originalRequirement = requirement;
     interviewState.status = "INTERVIEWING";
 
-    interviewState.state.objective = inferObjective(requirement);
+    interviewState.state.objective =
+      inferObjective(requirement);
 
     setNextQuestion();
 
@@ -286,12 +393,8 @@ document.addEventListener("DOMContentLoaded", () => {
     interviewState.currentQuestion = null;
 
     // --------------------------------------------------------
-    // This is the critical logic:
-    //
-    // We ALWAYS look for another meaningful contextual question
+    // Always look for another meaningful contextual question
     // before declaring the requirement ready.
-    //
-    // There is NO "after 3 questions" shortcut.
     // --------------------------------------------------------
 
     const nextQuestion = selectNextQuestion();
@@ -672,7 +775,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const open = total - known;
 
     setText("metric-known", `${known}/${total}`);
-    setText("metric-requirements", `${interviewState.answers.length}`);
+    setText(
+      "metric-requirements",
+      `${interviewState.answers.length}`
+    );
     setText("metric-open", `${open}`);
   }
 
